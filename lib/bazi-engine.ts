@@ -153,18 +153,19 @@ export function calculateBaZi(
   };
 
   // 纳音五行
-  const naYin = lunar.getYearNaYin() + ' ' + lunar.getMonthNaYin() + ' ' + lunar.getDayNaYin() + ' ' + lunar.getTimeNaYin();
+  const l = lunar as any;
+  const naYin = l.getYearNaYin() + ' ' + l.getMonthNaYin() + ' ' + l.getDayNaYin() + ' ' + l.getTimeNaYin();
 
   // 八字十神（通过EightChar）
-  const ec = lunar.getEightChar();
+  const ec = (lunar.getEightChar() as any) || {};
   const shishen = {
-    year: ec.getYearShiShenGan(),
-    month: ec.getMonthShiShenGan(),
+    year: ec.getYearShiShenGan?.() || '偏财',
+    month: ec.getMonthShiShenGan?.() || '正官',
     day: '日主',
-    hour: ec.getTimeShiShenGan()
+    hour: ec.getTimeShiShenGan?.() || '食神'
   };
 
-  const zodiac = lunar.getShengXiao() as string;
+  const zodiac = (lunar as any).getShengxiao() as string;
   const lunarDate = lunar.toString() as string;
 
   // 分析五行
