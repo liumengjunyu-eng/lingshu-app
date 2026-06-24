@@ -20,6 +20,8 @@ export default function Home() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // 清除错误信息
+    if (error) setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,24 +30,38 @@ export default function Home() {
     setError("");
 
     // 验证
-    if (!formData.name || !formData.birthYear || !formData.birthMonth || !formData.birthDay) {
-      setError("Please fill in all required fields.");
+    if (!formData.name.trim()) {
+      setError("Please enter your name.");
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.birthYear || !formData.birthMonth || !formData.birthDay) {
+      setError("Please fill in all required birth date fields.");
+      setLoading(false);
+      return;
+    }
+
+    // 验证日期有效性
+    const day = parseInt(formData.birthDay);
+    const month = parseInt(formData.birthMonth);
+    if (day < 1 || day > 31 || month < 1 || month > 12) {
+      setError("Please enter a valid birth date.");
       setLoading(false);
       return;
     }
 
     // 模拟生成报告（暂时跳转到报告页）
     try {
-      // TODO: 调用 API 生成报告
       console.log("Form data:", formData);
       
-      // 暂时跳转到报告页（带参数）
+      // 跳转到报告页（带参数）
       const params = new URLSearchParams({
-        name: formData.name,
+        name: formData.name.trim(),
         year: formData.birthYear,
         month: formData.birthMonth,
         day: formData.birthDay,
-        hour: formData.birthHour,
+        hour: formData.birthHour || "",
         gender: formData.gender,
       });
       router.push(`/report?${params.toString()}`);
@@ -71,7 +87,7 @@ export default function Home() {
         {/* 姓名 */}
         <div>
           <label htmlFor="name" className="block text-sm text-[#A1A1A6] mb-2">
-            Name
+            Name <span className="text-red-400">*</span>
           </label>
           <input
             type="text"
@@ -79,80 +95,77 @@ export default function Home() {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="Your name"
+            placeholder="Your full name"
             className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] placeholder-[#636366] focus:border-[#C9A96E] focus:outline-none transition"
             required
           />
+          <p className="text-xs text-[#636366] mt-1">Enter your real name for accurate analysis</p>
         </div>
 
         {/* 出生日期 */}
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="birthYear" className="block text-sm text-[#A1A1A6] mb-2">
-              Year
-            </label>
-            <select
-              id="birthYear"
-              name="birthYear"
-              value={formData.birthYear}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] focus:border-[#C9A96E] focus:outline-none transition"
-              required
-            >
-              <option value="">Year</option>
-              {Array.from({ length: 100 }, (_, i) => 2024 - i).map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="birthMonth" className="block text-sm text-[#A1A1A6] mb-2">
-              Month
-            </label>
-            <select
-              id="birthMonth"
-              name="birthMonth"
-              value={formData.birthMonth}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] focus:border-[#C9A96E] focus:outline-none transition"
-              required
-            >
-              <option value="">Month</option>
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                <option key={month} value={month}>
-                  {month}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="birthDay" className="block text-sm text-[#A1A1A6] mb-2">
-              Day
-            </label>
-            <select
-              id="birthDay"
-              name="birthDay"
-              value={formData.birthDay}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] focus:border-[#C9A96E] focus:outline-none transition"
-              required
-            >
-              <option value="">Day</option>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                <option key={day} value={day}>
-                  {day}
-                </option>
-              ))}
-            </select>
+        <div>
+          <label className="block text-sm text-[#A1A1A6] mb-2">
+            Birth Date <span className="text-red-400">*</span>
+          </label>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <select
+                id="birthYear"
+                name="birthYear"
+                value={formData.birthYear}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] focus:border-[#C9A96E] focus:outline-none transition"
+                required
+              >
+                <option value="">Year</option>
+                {Array.from({ length: 100 }, (_, i) => 2024 - i).map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <select
+                id="birthMonth"
+                name="birthMonth"
+                value={formData.birthMonth}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] focus:border-[#C9A96E] focus:outline-none transition"
+                required
+              >
+                <option value="">Month</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                  <option key={month} value={month}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <select
+                id="birthDay"
+                name="birthDay"
+                value={formData.birthDay}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] focus:border-[#C9A96E] focus:outline-none transition"
+                required
+              >
+                <option value="">Day</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                  <option key={day} value={day}>
+                    {day}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
         {/* 出生时辰 */}
         <div>
           <label htmlFor="birthHour" className="block text-sm text-[#A1A1A6] mb-2">
-            Birth Hour (approximate)
+            Birth Hour (optional)
           </label>
           <select
             id="birthHour"
@@ -161,13 +174,16 @@ export default function Home() {
             onChange={handleChange}
             className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] focus:border-[#C9A96E] focus:outline-none transition"
           >
-            <option value="">Unknown</option>
+            <option value="">Unknown / Not sure</option>
             {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
               <option key={hour} value={hour}>
                 {hour}:00
               </option>
             ))}
           </select>
+          <p className="text-xs text-[#636366] mt-1">
+            If unknown, we'll analyze based on your birth date. Precision improves accuracy.
+          </p>
         </div>
 
         {/* 性别 */}
@@ -177,10 +193,10 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setFormData((prev) => ({ ...prev, gender: "male" }))}
-              className={`flex-1 py-3 rounded-lg border transition ${
+              className={`flex-1 py-3 rounded-lg border transition font-medium ${
                 formData.gender === "male"
                   ? "bg-[#C9A96E] text-[#0D0D15] border-[#C9A96E]"
-                  : "bg-[#1A1A2E] text-[#A1A1A6] border-[#333]"
+                  : "bg-[#1A1A2E] text-[#A1A1A6] border-[#333] hover:border-[#C9A96E]"
               }`}
             >
               Male
@@ -188,10 +204,10 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setFormData((prev) => ({ ...prev, gender: "female" }))}
-              className={`flex-1 py-3 rounded-lg border transition ${
+              className={`flex-1 py-3 rounded-lg border transition font-medium ${
                 formData.gender === "female"
                   ? "bg-[#C9A96E] text-[#0D0D15] border-[#C9A96E]"
-                  : "bg-[#1A1A2E] text-[#A1A1A6] border-[#333]"
+                  : "bg-[#1A1A2E] text-[#A1A1A6] border-[#333] hover:border-[#C9A96E]"
               }`}
             >
               Female
@@ -200,15 +216,29 @@ export default function Home() {
         </div>
 
         {/* 错误提示 */}
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && (
+          <div className="bg-red-900/30 border border-red-600/50 rounded-lg p-3 text-red-300 text-sm">
+            ⚠️ {error}
+          </div>
+        )}
 
         {/* 提交按钮 */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 bg-gradient-to-r from-[#C9A96E] to-[#E8D5A3] text-[#0D0D15] font-bold text-lg rounded-lg hover:scale-105 transition disabled:opacity-50"
+          className="w-full py-4 bg-gradient-to-r from-[#C9A96E] to-[#E8D5A3] text-[#0D0D15] font-bold text-lg rounded-lg hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {loading ? "Generating..." : "Generate My Energy Report →"}
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-[#0D0D15] border-t-transparent rounded-full animate-spin"></div>
+              <span>Generating...</span>
+            </>
+          ) : (
+            <>
+              <span>Generate My Energy Report</span>
+              <span>→</span>
+            </>
+          )}
         </button>
       </form>
 
