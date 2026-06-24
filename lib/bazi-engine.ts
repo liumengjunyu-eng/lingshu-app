@@ -31,7 +31,7 @@ const WUXING_OF_BRANCH: Record<string, string> = {
   '午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水'
 };
 
-// 地支藏干映射
+// 地支藏干
 const HIDDEN_STEMS: Record<string, string[]> = {
   '子': ['癸'],
   '丑': ['己','癸','辛'],
@@ -53,57 +53,21 @@ const YINYANG: Record<string, string> = {
   '己':'阴','庚':'阳','辛':'阴','壬':'阳','癸':'阴'
 };
 
-// 五行相生相克
 const WUXING_CYCLE = ['木','火','土','金','水'];
 
-// 计算八字主轴五行
-function getMainElement(gz: string): string {
-  const stem = gz[0];
-  const branch = gz[1];
-  // 天干优先决定日主属性
-  return WUXING_OF_STEM[stem] || WUXING_OF_BRANCH[branch] || '土';
-}
-
-// 计算日主（出生日期的天干）
-export function getDayMaster(bazi: string[]): { stem: string; element: string; isYang: boolean } {
-  const dayGan = bazi[2][0];
-  return {
-    stem: dayGan,
-    element: WUXING_OF_STEM[dayGan] || '土',
-    isYang: YINYANG[dayGan] === '阳'
+// 五行旺相
+function getElementState(branch: string): string {
+  const states: Record<string, string> = {
+    '寅':'旺','卯':'旺',
+    '巳':'旺','午':'旺',
+    '申':'旺','酉':'旺',
+    '亥':'旺','子':'旺',
+    '辰':'墓','戌':'墓','丑':'墓','未':'墓'
   };
+  return states[branch] || '平';
 }
 
-// 分析十神
-function analyzeShishen(dayMaster: string, otherStem: string): string {
-  const dmElement = WUXING_OF_STEM[dayMaster];
-  const osElement = WUXING_OF_STEM[otherStem];
-  const isYang = YINYANG[dayMaster] === '阳';
-  const osIsYang = YINYANG[otherStem] === '阳';
-
-  const dmIdx = WUXING_CYCLE.indexOf(dmElement);
-  const osIdx = WUXING_CYCLE.indexOf(osElement);
-
-  // 计算距离
-  let diff = (osIdx - dmIdx + 5) % 5;
-
-  // 同我者：比劫
-  if (diff === 0) return osIsYang ? '劫财' : '比肩';
-
-  // 我生者：食伤
-  if (diff === 1) return osIsYang ? '食神' : '伤官';
-
-  // 我克者：才财
-  if (diff === 2) return osIsYang ? '偏财' : '正财';
-
-  // 克我者：官杀
-  if (diff === 3) return osIsYang ? '七杀' : '正官';
-
-  // 生我者：印枭
-  return osIsYang ? '偏印' : '正印';
-}
-
-// 分析五行能量
+// 分析五行
 function analyzeWuxing(bazi: string[]): {
   counts: Record<string, number>;
   percentages: Record<string, number>;
@@ -116,17 +80,13 @@ function analyzeWuxing(bazi: string[]): {
   bazi.forEach(gz => {
     const stem = gz[0];
     const branch = gz[1];
-    // 天干权重 1
     counts[WUXING_OF_STEM[stem]]++;
-    // 地支权重 1（藏干另算）
     counts[WUXING_OF_BRANCH[branch]]++;
-    // 地支藏干权重 0.5
     (HIDDEN_STEMS[branch] || []).forEach(hs => {
       counts[WUXING_OF_STEM[hs]] += 0.5;
     });
   });
 
-  // 计算加权总分
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   const percentages: Record<string, number> = {};
   const score: Record<string, number> = {};
@@ -135,10 +95,8 @@ function analyzeWuxing(bazi: string[]): {
     score[wx] = Math.round(count / total * 100);
   });
 
-  let strongest = '木';
-  let weakest = '木';
-  let maxScore = 0;
-  let minScore = Infinity;
+  let strongest = '木', weakest = '木';
+  let maxScore = 0, minScore = Infinity;
   Object.entries(score).forEach(([wx, s]) => {
     if (s > maxScore) { maxScore = s; strongest = wx; }
     if (s < minScore) { minScore = s; weakest = wx; }
@@ -147,94 +105,83 @@ function analyzeWuxing(bazi: string[]): {
   return { counts, percentages, strongest, weakest, score };
 }
 
-// 月令分析（出生月份的能量强弱）
-function getMonthStrength(monthBranch: string): string {
-  const strengths: Record<string, string> = {
-    '寅': '旺（春）', '卯': '旺（春）',
-    '巳': '旺（夏）', '午': '旺（夏）',
-    '申': '旺（秋）', '酉': '旺（秋）',
-    '亥': '旺（冬）', '子': '旺（冬）',
-    '辰': '墓（春末）', '戌': '墓（秋末）', '丑': '墓（冬末）', '未': '墓（夏末）'
-  };
-  return strengths[monthBranch] || '平';
-}
-
-// 生成八字解读
-function generateInsights(bazi: string[], wuxing: ReturnType<typeof analyzeWuxing>, gender: string): string[] {
-  const dayMaster = getDayMaster(bazi);
-  const monthBranch = bazi[1][1];
-  const monthStrength = getMonthStrength(monthBranch);
+// 生成解读
+function generateInsights(wuxing: ReturnType<typeof analyzeWuxing>, zodiac: string): string[] {
+  const { strongest, weakest } = wuxing;
   const insights: string[] = [];
 
-  const strengthText = monthStrength.includes('旺') ? 'strong' : monthStrength.includes('墓') ? 'weak' : 'balanced';
-  insights.push(`Your ${dayMaster.element} Day Master is ${strengthText} in the ${monthBranch} month, giving you a natural tendency toward ${strengthText === 'strong' ? 'confidence and assertiveness' : strengthText === 'weak' ? 'caution and resourcefulness' : 'adaptability'}.`);
+  const traitMap: Record<string, string> = {
+    '木': 'growth-oriented and visionary',
+    '火': 'passionate and charismatic',
+    '土': 'stable and nurturing',
+    '金': 'discerning and principled',
+    '水': 'adaptive and wise'
+  };
+  const growthMap: Record<string, string> = {
+    '木': 'flexibility and resilience',
+    '火': 'emotional warmth and inner peace',
+    '土': 'stability and self-care',
+    '金': 'clarity and healthy boundaries',
+    '水': 'wisdom and focused direction'
+  };
 
-  const dominant = wuxing.strongest;
-  const lacking = wuxing.weakest;
-  insights.push(`Your dominant ${dominant} energy makes you naturally ${dominant === '木' ? 'growth-oriented and visionary' : dominant === '火' ? 'passionate and charismatic' : dominant === '土' ? 'stable and nurturing' : dominant === '金' ? 'discerning and principled' : 'adaptive and wise'}.`);
-  insights.push(`Pay attention to your ${lacking} element — it is your weakest area and represents the greatest opportunity for growth.`);
+  insights.push(`Your ${WUXING_NAMES[strongest]} nature is dominant — you are naturally ${traitMap[strongest]}. This shapes how you approach challenges and relationships.`);
+  insights.push(`Your ${WUXING_NAMES[weakest]} energy needs the most attention. When balanced, it gives you ${growthMap[weakest]}. The 6-Dimensional Wellness Plan below is designed specifically to strengthen this element.`);
+  insights.push(`As a ${zodiac}, your zodiac animal complements your BaZi energy pattern. Use the daily practice section to align your ${WUXING_NAMES[weakest]} element with the natural rhythms.`);
 
   return insights;
 }
 
-// 用 lunar-javascript 排八字
+// 核心排盘函数
 export function calculateBaZi(
   birthYear: number,
   birthMonth: number,
   birthDay: number,
   birthHour: number,
   gender: string
-): {
-  bazi: string[];
-  naYin: string[];
-  shishen: Record<string, string>;
-  lunarDate: string;
-  zodiac: string;
-  dayMaster: string;
-  insights: string[];
-  wuxing: ReturnType<typeof analyzeWuxing>;
-} {
-  // lunar-javascript 排盘
-  // 出生时辰对应：0=子时, 1=丑时, ..., 23=亥时
-  const hourIndex = Math.floor(birthHour / 2); // 每两小时为一个时辰
-  const hourMap = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-  const lunarHour = hourMap[hourIndex % 12];
-
-  // 使用 solarToLunar（阳历转农历）排盘
-  // lunar-javascript 期望公历日期
+) {
+  // lunar-javascript 使用阳历日期
   const lunar = Lunar.fromYmdHms(birthYear, birthMonth, birthDay, birthHour, 0, 0);
 
-  const baziArr = lunar.getBaZi();
-  const naYinArr = lunar.getNaYin();
-  const lunarDateStr = lunar.toString();
-  const zodiac = lunar.getShengXiao();
+  // 八字
+  const baziArr = lunar.getBaZi() as string[];
+  const baziMap: Record<string, string> = {
+    year: baziArr[0],
+    month: baziArr[1],
+    day: baziArr[2],
+    hour: baziArr[3]
+  };
 
-  const bazi = baziArr as string[];
-  const naYin = naYinArr as string[];
+  // 纳音五行
+  const ec = lunar.getEightChar();
+  const naYinArr: string[] = ec.getBaZiNaYin();
+  const naYin = naYinArr[0] + ' ' + naYinArr[1] + ' ' + naYinArr[2] + ' ' + naYinArr[3];
 
-  // 计算十神
-  const dayMasterStem = bazi[2][0];
-  const shishen: Record<string, string> = {};
-  bazi.forEach((gz, i) => {
-    const stem = gz[0];
-    shishen[i === 0 ? 'year' : i === 1 ? 'month' : i === 2 ? 'day' : 'hour'] = analyzeShishen(dayMasterStem, stem);
-  });
+  // 八字十神（通过EightChar）
+  const shishen = {
+    year: ec.getYearShiShenGan(),
+    month: ec.getMonthShiShenGan(),
+    day: '日主',
+    hour: ec.getTimeShiShenGan()
+  };
+
+  const zodiac = lunar.getShengXiao() as string;
+  const lunarDate = lunar.toString() as string;
 
   // 分析五行
-  const wuxing = analyzeWuxing(bazi);
+  const wuxing = analyzeWuxing(baziArr);
 
   // 生成解读
-  const insights = generateInsights(bazi, wuxing, gender);
+  const insights = generateInsights(wuxing, zodiac);
 
   return {
-    bazi,
+    bazi: baziMap,
     naYin,
     shishen,
-    lunarDate: lunarDateStr,
     zodiac,
-    dayMaster: dayMasterStem,
-    insights,
-    wuxing
+    lunarDate,
+    wuxing,
+    insights
   };
 }
 
@@ -255,26 +202,9 @@ export function generateReport(formData: {
     formData.gender
   );
 
-  // 格式化八字柱显示
-  const baziMap: Record<string, string> = {};
-  const labels = ['year', 'month', 'day', 'hour'];
-  result.bazi.forEach((gz, i) => {
-    baziMap[labels[i]] = gz;
-  });
-
   return {
     name: formData.name,
-    bazi: baziMap,
-    naYin: {
-      year: result.naYin[0],
-      month: result.naYin[1],
-      day: result.naYin[2],
-      hour: result.naYin[3]
-    },
-    shishen: result.shishen,
-    lunarDate: result.lunarDate,
-    zodiac: result.zodiac,
-    wuxing: result.wuxing,
-    insights: result.insights
+    gender: formData.gender,
+    ...result
   };
 }
