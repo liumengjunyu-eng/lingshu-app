@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { generateReport, WUXING_COLORS, WUXING_NAMES } from "@/lib/bazi-engine";
 import { getWellnessPlan } from "@/lib/wellness-data";
 
-export default function ReportPage() {
+function ReportContent() {
   const searchParams = useSearchParams();
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 从 URL 参数获取表单数据
     const name = searchParams.get("name") || "You";
     const year = parseInt(searchParams.get("year") || "1990");
     const month = parseInt(searchParams.get("month") || "1");
@@ -19,7 +18,6 @@ export default function ReportPage() {
     const hour = parseInt(searchParams.get("hour") || "12");
     const gender = searchParams.get("gender") || "male";
 
-    // 生成报告
     const reportData = generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender });
     setReport(reportData);
     setLoading(false);
@@ -54,7 +52,6 @@ export default function ReportPage() {
         <h2 className="text-4xl font-bold text-[#C9A96E] mb-2">Your Energy Blueprint</h2>
         <p className="text-[#A1A1A6] mb-12">The unique pattern of your Five Elements</p>
 
-        {/* 雷达图（简化版 - 用进度条代替） */}
         <div className="w-full max-w-md space-y-4 mb-12">
           {Object.entries(wuxing.percentages).map(([element, percentage]: [string, any]) => (
             <div key={element}>
@@ -75,7 +72,6 @@ export default function ReportPage() {
           ))}
         </div>
 
-        {/* 八字柱 */}
         <div className="flex gap-4 mb-8">
           {Object.entries(bazi).map(([pillar, gz]: [string, any]) => (
             <div key={pillar} className="text-center">
@@ -108,7 +104,7 @@ export default function ReportPage() {
           <div className="bg-[#1A1A2E] rounded-lg p-6">
             <h3 className="text-xl text-[#C9A96E] mb-3">Growth Areas</h3>
             <p className="text-[#F5F5F7] leading-relaxed">
-              Your {WUXING_NAMES[wuxing.weakest] || wuxing.weakest} element needs nurturing. When this energy is balanced, youll gain {wuxing.weakest === '木' ? 'flexibility and resilience' : wuxing.weakest === '火' ? 'emotional warmth and connection' : wuxing.weakest === '土' ? 'stability and groundedness' : wuxing.weakest === '金' ? 'clarity and healthy boundaries' : 'wisdom and adaptability'}. Focus on the wellness plan below to strengthen this element.
+              Your {WUXING_NAMES[wuxing.weakest] || wuxing.weakest} element needs nurturing. When this energy is balanced, you will gain {wuxing.weakest === '木' ? 'flexibility and resilience' : wuxing.weakest === '火' ? 'emotional warmth and connection' : wuxing.weakest === '土' ? 'stability and groundedness' : wuxing.weakest === '金' ? 'clarity and healthy boundaries' : 'wisdom and adaptability'}. Focus on the wellness plan below to strengthen this element.
             </p>
           </div>
         </div>
@@ -160,7 +156,6 @@ export default function ReportPage() {
             </div>
           </div>
 
-          {/* 经典启示 */}
           <div className="w-full max-w-4xl mt-8 bg-[#1A1A2E] rounded-lg p-6 border-l-4 border-[#C9A96E]">
             <div className="text-sm text-[#C9A96E] mb-2">📜 Classic Wisdom</div>
             <p className="text-[#F5F5F7] italic leading-relaxed">{wellnessPlan.classic}</p>
@@ -202,7 +197,7 @@ export default function ReportPage() {
         <div className="text-6xl mb-6">🔒</div>
         <h2 className="text-4xl font-bold text-[#C9A96E] mb-4">Unlock Your Full Report</h2>
         <p className="text-[#A1A1A6] mb-8 text-center max-w-md">
-          Youre seeing 30% of your Energy Blueprint. Get the complete Life Compass Report for just $9.99.
+          You are seeing 30% of your Energy Blueprint. Get the complete Life Compass Report for just $9.99.
         </p>
 
         <div className="w-full max-w-md bg-[#1A1A2E] rounded-lg p-8 text-center">
@@ -235,5 +230,24 @@ export default function ReportPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function ReportLoading() {
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-[#0D0D15]">
+      <div className="text-center">
+        <div className="text-2xl text-[#C9A96E] mb-4">Consulting the Oracle...</div>
+        <div className="animate-pulse text-[#A1A1A6]">Decoding your energy pattern</div>
+      </div>
+    </main>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={<ReportLoading />}>
+      <ReportContent />
+    </Suspense>
   );
 }
