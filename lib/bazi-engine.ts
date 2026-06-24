@@ -153,11 +153,10 @@ export function calculateBaZi(
   };
 
   // 纳音五行
-  const ec = lunar.getEightChar();
-  const naYinArr: string[] = ec.getBaZiNaYin();
-  const naYin = naYinArr[0] + ' ' + naYinArr[1] + ' ' + naYinArr[2] + ' ' + naYinArr[3];
+  const naYin = lunar.getYearNaYin() + ' ' + lunar.getMonthNaYin() + ' ' + lunar.getDayNaYin() + ' ' + lunar.getTimeNaYin();
 
   // 八字十神（通过EightChar）
+  const ec = lunar.getEightChar();
   const shishen = {
     year: ec.getYearShiShenGan(),
     month: ec.getMonthShiShenGan(),

@@ -6,6 +6,10 @@ declare module 'lunar-javascript' {
     getEightChar(): EightChar;
     getSolar(): { toString(): string };
     toString(): string;
+    getYearNaYin(): string;
+    getMonthNaYin(): string;
+    getDayNaYin(): string;
+    getTimeNaYin(): string;
   }
 
   export class EightChar {
@@ -17,6 +21,5 @@ declare module 'lunar-javascript' {
     getMonthShiShenZhi(): string;
     getDayShiShenZhi(): string;
     getTimeShiShenZhi(): string;
-    getBaZiNaYin(): string[];
   }
 }
