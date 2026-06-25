@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^9.8.0",
+    "lucide-react": "^1.21.0",
     "lunar-javascript": "^1.7.7",
     "next": "^14.2.15",
     "react": "^18.3.1",
