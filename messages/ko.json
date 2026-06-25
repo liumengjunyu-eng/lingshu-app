@@ -1,4 +1,4 @@
-{
+﻿{
   "common": {
     "title": "영추 · 당신의 회복 시스템",
     "subtitle": "신체 상태를 기반으로 회복 리듬을 찾으세요",
@@ -30,7 +30,7 @@
     },
     "emotion": {
       "exhausted": "끊이지 않는 피로감",
-      "uncomfortable": "뭔지 모르지만 계속不舒服",
+      "uncomfortable": "뭔지 모르지만 계속 불편하고 개운하지 않다",
       "no_motivation": "미래에 대한 의욕이 없다",
       "no_interest": "아무것도 흥미롭지 않다",
       "never_rested": "쉬고 싶지만 충분히 쉬지 못한다"
