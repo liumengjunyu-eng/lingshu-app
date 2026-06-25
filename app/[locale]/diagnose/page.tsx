@@ -2,49 +2,51 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { EmotionType, EMOTION_LABELS } from '@/lib/inference/types';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 type PrimaryIssue = 'sleep' | 'anxiety' | 'direction' | 'relationship' | 'energy';
 type FollowUpChoice = 'A' | 'B' | 'C' | 'D';
 
-const ISSUE_OPTIONS: { value: PrimaryIssue; label: string; emoji: string }[] = [
-  { value: 'sleep', label: '最近总是睡不好', emoji: '😴' },
-  { value: 'anxiety', label: '经常焦虑和内耗', emoji: '😰' },
-  { value: 'direction', label: '感觉没有方向', emoji: '🧭' },
-  { value: 'relationship', label: '关系让我困扰', emoji: '💔' },
-  { value: 'energy', label: '精力越来越差', emoji: '⚡' },
+const ISSUE_OPTIONS: { value: PrimaryIssue; emoji: string }[] = [
+  { value: 'sleep', emoji: '😴' },
+  { value: 'anxiety', emoji: '😰' },
+  { value: 'direction', emoji: '🧭' },
+  { value: 'relationship', emoji: '💔' },
+  { value: 'energy', emoji: '⚡' },
 ];
 
-const FOLLOW_UP_MAP: Record<PrimaryIssue, { value: FollowUpChoice; label: string; emoji: string }[]> = {
+const FOLLOW_UP_MAP: Record<PrimaryIssue, { value: FollowUpChoice; emoji: string }[]> = {
   sleep: [
-    { value: 'A', label: '一直想事情停不下来', emoji: '🤔' },
-    { value: 'B', label: '总想把事情做到最好', emoji: '🎯' },
-    { value: 'C', label: '情绪波动比较大', emoji: '😤' },
-    { value: 'D', label: '容易担心未来', emoji: '😰' },
+    { value: 'A', emoji: '🤔' },
+    { value: 'B', emoji: '🎯' },
+    { value: 'C', emoji: '😤' },
+    { value: 'D', emoji: '😰' },
   ],
   anxiety: [
-    { value: 'A', label: '反复回想过去的错误', emoji: '🔄' },
-    { value: 'B', label: '担心未来最坏的情况', emoji: '😨' },
-    { value: 'C', label: '心跳加速、坐立不安', emoji: '💓' },
-    { value: 'D', label: '想逃避、什么都不想面对', emoji: '🙈' },
+    { value: 'A', emoji: '🔄' },
+    { value: 'B', emoji: '😨' },
+    { value: 'C', emoji: '💓' },
+    { value: 'D', emoji: '🙈' },
   ],
   direction: [
-    { value: 'A', label: '想太多，迟迟无法决定', emoji: '🤯' },
-    { value: 'B', label: '害怕选错，希望有人给答案', emoji: '😟' },
-    { value: 'C', label: '凭直觉快速做了再说', emoji: '⚡' },
-    { value: 'D', label: '列清单理性分析', emoji: '📋' },
+    { value: 'A', emoji: '🤯' },
+    { value: 'B', emoji: '😟' },
+    { value: 'C', emoji: '⚡' },
+    { value: 'D', emoji: '📋' },
   ],
   relationship: [
-    { value: 'A', label: '优先满足对方需求', emoji: '🤲' },
-    { value: 'B', label: '避免冲突、压抑自己', emoji: '🤐' },
-    { value: 'C', label: '直接表达但容易伤到人', emoji: '💥' },
-    { value: 'D', label: '理性沟通、不表达情绪', emoji: '🧊' },
+    { value: 'A', emoji: '🤲' },
+    { value: 'B', emoji: '🤐' },
+    { value: 'C', emoji: '💥' },
+    { value: 'D', emoji: '🧊' },
   ],
   energy: [
-    { value: 'A', label: '硬撑继续做事', emoji: '🏋️' },
-    { value: 'B', label: '心里着急但身体动不了', emoji: '😫' },
-    { value: 'C', label: '容易烦躁、失去耐心', emoji: '😤' },
-    { value: 'D', label: '直接躺平、什么也不做', emoji: '🛌' },
+    { value: 'A', emoji: '🏋️' },
+    { value: 'B', emoji: '😫' },
+    { value: 'C', emoji: '😤' },
+    { value: 'D', emoji: '🛌' },
   ],
 };
 
@@ -65,6 +67,7 @@ const PROGRESS_STEPS = [
 
 export default function DiagnosePage() {
   const router = useRouter();
+  const t = useTranslations('diagnose');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [primaryIssue, setPrimaryIssue] = useState<PrimaryIssue | null>(null);
@@ -104,7 +107,6 @@ export default function DiagnosePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '诊断失败');
 
-      // 储存结果 + 情绪
       const result = { ...data.data, emotion: emo };
       localStorage.setItem('diagnosis_result', JSON.stringify(result));
       router.push('/result');
@@ -144,6 +146,9 @@ export default function DiagnosePage() {
 
   return (
     <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
+      <div className="absolute top-6 right-6">
+        <LanguageSwitcher />
+      </div>
       <div style={{ maxWidth: '420px', width: '100%' }}>
         {/* Progress */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginBottom: '28px' }}>
@@ -160,7 +165,7 @@ export default function DiagnosePage() {
         {step === 1 && (
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--color-text-primary)', textAlign: 'center', marginBottom: '24px' }}>
-              你最近最困扰什么？
+              {t('step1')}
             </h1>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {ISSUE_OPTIONS.map((option) => (
@@ -174,7 +179,7 @@ export default function DiagnosePage() {
                   }}
                 >
                   <span style={{ fontSize: '20px' }}>{option.emoji}</span>
-                  {option.label}
+                  {t(`options.${option.value}`)}
                 </button>
               ))}
             </div>
@@ -192,13 +197,7 @@ export default function DiagnosePage() {
               ← 返回
             </button>
             <h1 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)', textAlign: 'center', marginBottom: '24px' }}>
-              {
-                primaryIssue === 'sleep' && '睡不好的时候，你更像：'
-                || primaryIssue === 'anxiety' && '焦虑的时候，你更常：'
-                || primaryIssue === 'direction' && '面对选择时，你更常：'
-                || primaryIssue === 'relationship' && '在关系中，你更常：'
-                || primaryIssue === 'energy' && '精力不足时，你更常：'
-              }
+              {t('step2')}
             </h1>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {FOLLOW_UP_MAP[primaryIssue].map((option) => (
@@ -213,7 +212,6 @@ export default function DiagnosePage() {
                 >
                   <span style={{ fontWeight: 500, color: 'var(--color-text-muted)', minWidth: '24px' }}>{option.value}</span>
                   <span style={{ fontSize: '18px' }}>{option.emoji}</span>
-                  {option.label}
                 </button>
               ))}
             </div>
@@ -231,7 +229,7 @@ export default function DiagnosePage() {
               ← 返回
             </button>
             <h1 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)', textAlign: 'center', marginBottom: '8px' }}>
-              你更常感觉到哪种情绪？
+              {t('step3')}
             </h1>
             <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', textAlign: 'center', marginBottom: '24px' }}>
               选一个最接近的，没有对错

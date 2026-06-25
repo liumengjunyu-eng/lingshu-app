@@ -7,6 +7,7 @@ import { EmotionMirror } from '@/components/EmotionMirror';
 import { HookLine } from '@/components/HookLine';
 import { RecoveryPath } from '@/components/RecoveryPath';
 import { Proverb } from '@/components/Proverb';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 type RecoveryLevel = 'good' | 'light' | 'medium' | 'heavy';
 
@@ -53,6 +54,9 @@ export default function ResultPage() {
 
   return (
     <main style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
+      <div className="absolute top-6 right-6 z-10">
+        <LanguageSwitcher />
+      </div>
       <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 20px 48px' }}>
         {/* ① 钉子句 */}
         <HookLine />
