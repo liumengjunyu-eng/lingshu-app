@@ -137,7 +137,7 @@ export default function DiagnosePage() {
         followUpChoice,
       };
       localStorage.setItem('diagnosis_result', JSON.stringify(symbolData));
-      router.push('/report');
+      router.push('/deep-report');
     } catch (error) {
       console.error('[Diagnosis error]', error);
       alert('Diagnosis failed. Please try again.');
