@@ -8,6 +8,9 @@ import { getWellnessPlan } from '@/lib/wellness-data';
 function ReportContent() {
   const searchParams = useSearchParams();
   const [report, setReport] = useState<any>(null);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [payEmail, setPayEmail] = useState('');
+  const [payStatus, setPayStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -311,6 +314,7 @@ function ReportContent() {
             解锁完整深度分析，获得持续跟踪与个性化建议
           </p>
           <button
+            onClick={() => setShowPayModal(true)}
             className="btn-primary"
             style={{ width: '100%' }}
           >
@@ -328,6 +332,104 @@ function ReportContent() {
           </p>
         </div>
       </div>
+
+      {/* 深度分析付费意向弹窗 */}
+      {showPayModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+          onClick={() => { setShowPayModal(false); setPayStatus('idle'); setPayEmail(''); }}
+        >
+          <div
+            style={{
+              background: 'var(--color-bg-card)',
+              borderRadius: '16px',
+              padding: '28px 24px',
+              maxWidth: '340px',
+              width: '100%',
+              textAlign: 'center',
+              border: '1px solid var(--color-border)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {payStatus === 'done' ? (
+              <>
+                <p style={{ fontSize: '36px', marginBottom: '12px' }}>📩</p>
+                <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
+                  已登记
+                </p>
+                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '24px' }}>
+                  上线后第一时间通知你。
+                </p>
+                <button
+                  onClick={() => { setShowPayModal(false); setPayStatus('idle'); setPayEmail(''); }}
+                  className="btn-primary"
+                  style={{ width: '100%' }}
+                >
+                  知道了
+                </button>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: '32px', marginBottom: '12px' }}>🔓</p>
+                <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
+                  深度分析即将上线
+                </p>
+                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
+                  留下邮箱，上线后通知你。
+                </p>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={payEmail}
+                  onChange={(e) => setPayEmail(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    fontSize: '15px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--color-border)',
+                    background: 'var(--color-bg)',
+                    color: 'var(--color-text-primary)',
+                    outline: 'none',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!payEmail || !payEmail.includes('@')) return;
+                    setPayStatus('loading');
+                    try {
+                      await fetch('/api/waitlist', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: payEmail }),
+                      });
+                      setPayStatus('done');
+                    } catch {
+                      setPayStatus('idle');
+                    }
+                  }}
+                  className="btn-primary"
+                  style={{ width: '100%' }}
+                  disabled={payStatus === 'loading'}
+                >
+                  {payStatus === 'loading' ? '提交中...' : '通知我 ✓'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
