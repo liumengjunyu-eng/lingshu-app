@@ -8,7 +8,7 @@ import { runDecisionEngine, type DecisionDomain } from '@/lib/symbol/v3/decision
 import { createSnapshot, saveSnapshot, getMemory, analyzeEvolution } from '@/lib/symbol/v3/symbolMemory';
 import { captureSignal } from '@/lib/symbol/v3/userSignals';
 import { loadDiagnoseResult, mapToHumanInput, type DiagnoseResult } from '@/lib/symbol/v3/mapper';
-import { calculateBazi, type BaziResult } from '@/lib/inference/bazi';
+import { getBaziInfo, type BaziResult } from '@/lib/inference/bazi';
 import type { SymbolOutput } from '@/lib/symbol/types';
 import html2canvas from 'html2canvas';
 
@@ -313,7 +313,14 @@ export default function DeepReportPage() {
       const day = parseInt(formData.day);
       const hour = parseInt(formData.hour);
 
-      const baziResult = calculateBazi(year, month, day, hour, formData.gender);
+      const baziResult = getBaziInfo({
+        year,
+        month,
+        day,
+        hour,
+        city: formData.city,
+        gender: formData.gender,
+      });
       setBazi(baziResult);
       setMode('full');
       captureSignal(sid, 'full_report_generate');
