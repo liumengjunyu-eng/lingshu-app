@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import type { RecoveryStateLevel } from '@/lib/recovery/types';
 import { getViralCaption, getSocialComparison, getSocialLabel } from '@/lib/share/captions';
 import { RECOVERY_TYPE_MAP } from '@/lib/share/types';
+import { trackShare } from '@/lib/share/analytics';
 
 interface ShareButtonProps {
   state: RecoveryStateLevel;
@@ -13,6 +15,7 @@ interface ShareButtonProps {
 const LOCALES = ['zh', 'en', 'zh-TW', 'ja', 'ko'] as const;
 
 export function ShareButton({ state, locale }: ShareButtonProps) {
+  const params = useParams();
   const [showPanel, setShowPanel] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -25,6 +28,7 @@ export function ShareButton({ state, locale }: ShareButtonProps) {
   const meta = RECOVERY_TYPE_MAP[state];
 
   const handleCopy = async () => {
+    trackShare(state, 'share_button');
     try {
       await navigator.clipboard.writeText(caption + '\n\nlingshu.app');
       setCopied(true);
@@ -81,7 +85,7 @@ export function ShareButton({ state, locale }: ShareButtonProps) {
             {caption}
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
             <button
               onClick={handleCopy}
               className="btn-primary"
@@ -91,6 +95,7 @@ export function ShareButton({ state, locale }: ShareButtonProps) {
             </button>
             <button
               onClick={() => {
+                trackShare(state, 'share_button');
                 const text = encodeURIComponent(caption + '\n\nlingshu.app');
                 window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener');
               }}
@@ -100,10 +105,11 @@ export function ShareButton({ state, locale }: ShareButtonProps) {
                 color: 'var(--color-text-primary)', cursor: 'pointer',
               }}
             >
-              X(Twitter)
+              X
             </button>
             <button
               onClick={() => {
+                trackShare(state, 'share_button');
                 const text = encodeURIComponent(caption + '\n\nlingshu.app');
                 window.open(`https://t.me/share/url?url=https://lingshu.app&text=${text}`, '_blank', 'noopener');
               }}
@@ -116,6 +122,21 @@ export function ShareButton({ state, locale }: ShareButtonProps) {
               Telegram
             </button>
           </div>
+
+          {/* Story 卡片入口 */}
+          <a
+            href={`/${params?.locale || 'zh'}/story`}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '12px', borderRadius: '10px',
+              background: '#F5F0E8', color: '#1A1A1A',
+              fontSize: '14px', fontWeight: 500, textDecoration: 'none',
+              gap: '6px',
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>🖼</span>
+            生成可分享卡片（9:16）
+          </a>
         </>
       )}
     </div>
