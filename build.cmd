@@ -1,4 +1,5 @@
 @echo off
 cd /d D:\Projects\lingshu-app
-call npx next build
-pause
+set "DEEPSEEK_API_KEY=sk-placeholder"
+set "STRIPE_SECRET_KEY=sk-placeholder"
+npx next build
