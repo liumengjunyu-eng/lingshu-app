@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase/client';
 import { getSessionIdFromRequest } from '@/lib/supabase/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const sessionId = getSessionIdFromRequest(req);
