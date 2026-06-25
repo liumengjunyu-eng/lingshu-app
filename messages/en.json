@@ -34,6 +34,13 @@
       "no_motivation": "No drive toward the future",
       "no_interest": "Nothing feels interesting",
       "never_rested": "Always want rest, never rested"
-    }
+    },
+    "progress": {
+      "0": "Analyzing your recovery state...",
+      "1": "Identifying your behavior pattern...",
+      "2": "Matching your archetype...",
+      "3": "Generating your observations..."
+    },
+    "emotionHint": "Pick the closest one. There's no right or wrong."
   }
 }

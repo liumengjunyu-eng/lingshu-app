@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/context';
 import { EmotionType } from '@/lib/inference/types';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -58,16 +58,14 @@ const EMOTION_OPTIONS: { value: EmotionType; emoji: string }[] = [
   { value: 'never_rested', emoji: '😪' },
 ];
 
-const PROGRESS_STEPS = [
-  '正在分析恢复状态...',
-  '正在识别行为模式...',
-  '正在匹配人格原型...',
-  '正在生成观察指标...',
-];
+const PROGRESS_STEPS = ['progress.0', 'progress.1', 'progress.2', 'progress.3'];
 
 export default function DiagnosePage() {
   const router = useRouter();
+  const params = useParams<{ locale: string }>();
+  const locale = params?.locale || 'zh';
   const { t } = useTranslations('diagnose');
+  const CJK_LOCALES = new Set(['zh', 'zh-TW']);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [primaryIssue, setPrimaryIssue] = useState<PrimaryIssue | null>(null);
@@ -109,7 +107,8 @@ export default function DiagnosePage() {
 
       const result = { ...data.data, emotion: emo };
       localStorage.setItem('diagnosis_result', JSON.stringify(result));
-      router.push('/result');
+      const nextPage = CJK_LOCALES.has(locale) ? `/${locale}/result` : '/result';
+      router.push(nextPage);
     } catch (error) {
       console.error('[诊断错误]', error);
       alert('诊断失败，请重试');
@@ -135,7 +134,7 @@ export default function DiagnosePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               }}>
                 <span style={{ display: 'inline-block', width: '16px' }}>{index <= progressStep ? '✓' : '○'}</span>
-                <span>{label}</span>
+                <span>{t(label)}</span>
               </div>
             ))}
           </div>
@@ -234,7 +233,7 @@ export default function DiagnosePage() {
               {t('step3')}
             </h1>
             <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', textAlign: 'center', marginBottom: '24px' }}>
-              选一个最接近的，没有对错
+              {t('emotionHint')}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {EMOTION_OPTIONS.map((opt) => (
