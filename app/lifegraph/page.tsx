@@ -4,18 +4,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { loadGraph, computeSummary } from '@/lib/lifegraph';
-import { LifeGraph, LifeGraphSummary } from '@/lib/lifegraph';
+import { loadGraph, computeSummary, simulateLifePath, getSimulationAdvice } from '@/lib/lifegraph';
+import { LifeGraph, LifeGraphSummary, SimulationResult } from '@/lib/lifegraph';
 import Link from 'next/link';
 
 export default function LifeGraphPage() {
   const [graph, setGraph] = useState<LifeGraph | null>(null);
   const [summary, setSummary] = useState<LifeGraphSummary | null>(null);
+  const [simulation, setSimulation] = useState<SimulationResult | null>(null);
 
   useEffect(() => {
     const g = loadGraph();
     setGraph(g);
-    if (g) setSummary(computeSummary(g));
+    if (g) {
+      setSummary(computeSummary(g));
+      const lastNode = g.nodes[g.nodes.length - 1];
+      if (lastNode) setSimulation(simulateLifePath(lastNode));
+    }
   }, []);
 
   if (!graph || graph.nodes.length === 0) {
@@ -159,6 +164,56 @@ export default function LifeGraphPage() {
             </div>
           ))}
         </div>
+
+        {/* Life Simulation Section */}
+        {simulation && (
+          <div className="mt-12">
+            <div className="mb-6">
+              <div className="text-forest/40 text-xs tracking-[0.2em] uppercase">Life Simulation</div>
+              <h2 className="font-sans font-bold text-ink text-2xl mt-1">Where You&rsquo;re Headed</h2>
+              <p className="text-ink/40 text-sm mt-1">Based on your current state, the system projects these possible paths.</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-forest/5 mb-6">
+              <p className="text-ink/70 text-sm leading-relaxed italic">
+                &ldquo;{getSimulationAdvice(simulation.current.state)}&rdquo;
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              {simulation.paths.map((path, i) => (
+                <div key={i} className={`rounded-2xl p-6 border ${
+                  i === 1 ? 'border-forest/20 bg-forest/[0.02]' : 'border-forest/5 bg-white'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-ink/30 font-mono">PATH {String.fromCharCode(65 + i)}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                      path.riskLevel === 'high' ? 'bg-red-50 text-red-400' :
+                      path.riskLevel === 'medium' ? 'bg-amber-50 text-amber-500' :
+                      'bg-green-50 text-forest'
+                    }`}>
+                      {path.riskLevel.toUpperCase()} RISK
+                    </span>
+                  </div>
+                  <h3 className="font-sans font-bold text-ink text-base mb-1">{path.label}</h3>
+                  <p className="text-ink/50 text-sm leading-relaxed">{path.outcome}</p>
+                  <div className="mt-3 flex justify-between text-xs text-ink/30">
+                    <span>{path.timeline}</span>
+                    {path.identityShift && <span className="text-gold">Identity shift</span>}
+                  </div>
+                  <div className="mt-3 h-6 flex items-end gap-[2px]">
+                    {path.energyProjection.slice(0, 7).map((v, j) => (
+                      <div key={j}
+                        className="w-full bg-forest/20 rounded-t"
+                        style={{ height: `${(v / 100) * 24}px` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
