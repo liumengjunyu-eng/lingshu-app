@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "灵枢 LingShu - Your Energy Blueprint",
+  title: "灵枢 - 你的恢复指南",
   description:
-    "Discover your Five-Element energy pattern. Personalized wellness plan based on BaZi and Traditional Chinese Medicine.",
+    "1分钟了解你的真实状态，找到适合你的恢复节奏。",
 };
 
 export default function RootLayout({
@@ -13,10 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="antialiased bg-[#0D0D15] text-[#F5F5F7]" style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif" }}>
-        {children}
-      </body>
+    <html lang="zh-CN">
+      <body>{children}</body>
     </html>
   );
 }
