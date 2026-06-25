@@ -2,12 +2,17 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { localeNames } from '@/i18n';
 import { useState, useRef, useEffect } from 'react';
 
+const localeNames = {
+  zh: '简体中文',
+  'zh-TW': '繁體中文',
+  en: 'English',
+  ja: '日本語',
+  ko: '한국어',
+};
+
 export default function LanguageSwitcher() {
-  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +39,9 @@ export default function LanguageSwitcher() {
     setIsOpen(false);
   };
 
-  const currentName = localeNames[locale as keyof typeof localeNames] || 'English';
+  const segments = pathname.split('/').filter(Boolean);
+  const currentLocale = segments.length > 0 && segments[0] in localeNames ? segments[0] : 'zh';
+  const currentName = localeNames[currentLocale as keyof typeof localeNames] || '简体中文';
 
   return (
     <div className="relative" ref={ref}>
@@ -59,13 +66,13 @@ export default function LanguageSwitcher() {
               key={code}
               onClick={() => switchLanguage(code)}
               className={`w-full text-left px-4 py-3 text-sm transition-colors ${
-                locale === code
+                currentLocale === code
                   ? 'bg-[#E8F0E6] text-[#1A1A1A] font-medium'
                   : 'text-[#4A4A4A] hover:bg-[#F5F5F2]'
               }`}
             >
               {name}
-              {locale === code && <span className="float-right text-[#4A7C49]">✓</span>}
+              {currentLocale === code && <span className="float-right text-[#4A7C49]">✓</span>}
             </button>
           ))}
         </div>
