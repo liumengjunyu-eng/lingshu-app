@@ -25,7 +25,11 @@ function ReportContent() {
 
       const reportData = generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender, bloodType });
 
-      // 尝试获取 AI 解读（失败不影响页面渲染）
+      // 先立刻渲染规则引擎的解读
+      setReport({ ...reportData, intent });
+      setLoading(false);
+
+      // 异步获取 AI 解读（不阻塞页面，超时/失败不影响）
       fetch("/api/interpret", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,14 +48,11 @@ function ReportContent() {
         .then((res) => res.json())
         .then((data) => {
           if (data.sections && data.sections.length > 0) {
-            setReport({ ...reportData, intent, insights: data.sections });
-          } else {
-            setReport({ ...reportData, intent });
+            setReport((prev: any) => prev ? { ...prev, insights: data.sections } : prev);
           }
         })
         .catch(() => {
-          // AI 解读失败，使用规则引擎 fallback
-          setReport({ ...reportData, intent });
+          // 失败保持规则引擎的解读
         });
     } catch (e: any) {
       setError("Failed to generate report: " + (e?.message || "Unknown error"));
