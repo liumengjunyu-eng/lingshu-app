@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations } from '@/lib/i18n/context';
 import { EmotionType, EMOTION_LABELS } from '@/lib/inference/types';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
