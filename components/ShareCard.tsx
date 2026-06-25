@@ -1,61 +1,62 @@
+// components/ShareCard.tsx
 'use client';
 
 import { forwardRef } from 'react';
-import { getPersona, getHook } from '@/lib/persona';
 
 interface ShareCardProps {
- score: number;
- type: string;
+  title: string;
+  mirror: string;
+  score: number;
 }
 
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
- ({ score, type }, ref) => {
- const persona = getPersona(type);
- const hook = getHook(type);
+  ({ title, mirror, score }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className="w-[500px] bg-cream p-12 rounded-none border border-cream/80"
+        style={{
+          fontFamily: "'Inter', -apple-system, sans-serif",
+        }}
+      >
+        {/* 顶部标识 */}
+        <div className="flex justify-between items-center mb-8">
+          <span className="text-forest/40 text-[10px] tracking-[0.2em] uppercase">
+            Recovery Debt
+          </span>
+          <span className="text-forest/10 text-[10px] tracking-widest">LINGSHU</span>
+        </div>
 
- return (
- <div
- ref={ref}
- style={{
- width: 600,
- padding: 40,
- background: '#FBF9F6',
- borderRadius: 24,
- fontFamily: 'system-ui, sans-serif',
- }}
- >
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
- <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
- <div style={{ width: 40, height: 40, borderRadius: 12, background: '#4A7C49', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
- <span style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>L</span>
- </div>
- <span style={{ fontSize: 18, fontWeight: 600, color: '#1A1A1A' }}>Lingshu</span>
- </div>
- <div style={{ padding: '4px 14px', borderRadius: 20, background: '#E8F0E6', color: '#4A7C49', fontSize: 13, fontWeight: 500 }}>
- {persona.name}
- </div>
- </div>
+        {/* 分割线 */}
+        <div className="w-full h-px bg-forest/5 mb-8" />
 
- <div style={{ fontSize: 28, fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3, marginBottom: 8 }}>
- {persona.label}
- </div>
+        {/* 身份（大） */}
+        <h2 className="text-3xl font-bold text-ink tracking-tight leading-tight">
+          {title}
+        </h2>
 
- <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 }}>
- <span style={{ fontSize: 48, fontWeight: 700, color: '#4A7C49' }}>{score}</span>
- <span style={{ fontSize: 18, color: '#8A8A8A' }}>/ 100</span>
- </div>
+        {/* 镜像句 */}
+        <p className="text-ink/50 text-lg mt-2 font-light tracking-wide">
+          {mirror}
+        </p>
 
- <p style={{ fontSize: 20, fontWeight: 500, color: '#1A1A1A', lineHeight: 1.5, marginBottom: 24 }}>
- &ldquo;{hook.text}&rdquo;
- </p>
+        {/* 分割线 */}
+        <div className="w-12 h-0.5 bg-gold/30 my-6" />
 
- <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px solid #EAE5DE' }}>
- <span style={{ fontSize: 13, color: '#4A7C49' }}>Find your recovery type &rarr;</span>
- <span style={{ fontSize: 12, color: '#B0B0B0' }}>lingshu.app</span>
- </div>
- </div>
- );
- }
+        {/* 分数（极简） */}
+        <div className="flex items-end gap-2">
+          <span className="text-5xl font-light text-forest tracking-tight">{score}</span>
+          <span className="text-ink/20 text-sm font-light mb-1">/ 100</span>
+        </div>
+
+        {/* 底部标识 */}
+        <div className="mt-8 pt-6 border-t border-forest/5 flex justify-between items-center">
+          <span className="text-ink/15 text-[10px] tracking-widest">RECOVERY INTELLIGENCE</span>
+          <span className="text-ink/10 text-[10px] tracking-widest">LINGSHU.APP</span>
+        </div>
+      </div>
+    );
+  }
 );
 
 ShareCard.displayName = 'ShareCard';

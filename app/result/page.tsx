@@ -1,118 +1,95 @@
 'use client';
 
-import { useEffect, useState, useRef, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import html2canvas from 'html2canvas';
-import { track } from '@/lib/track';
-import { getPersona, getHook } from '@/lib/persona';
-import { ShareCard } from '@/components/ShareCard';
+
+function ArchetypeSymbol({ type }: { type: string }) {
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <circle cx="32" cy="32" r="22" stroke="#234132" strokeWidth="1.2" opacity="0.3" />
+      <circle
+        cx="32" cy="32" r="22"
+        stroke="#C7A86B" strokeWidth="1.2" opacity="0.5"
+        strokeDasharray="80 60" strokeLinecap="round"
+      />
+      <circle cx="32" cy="32" r="3" fill="#234132" opacity="0.5" />
+      <circle cx="54" cy="20" r="2" fill="#C7A86B" opacity="0.4" />
+      <circle cx="14" cy="46" r="2" fill="#C7A86B" opacity="0.4" />
+    </svg>
+  );
+}
 
 function ResultContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const score = parseInt(searchParams.get('score') || '50');
-  const type = searchParams.get('type') || 'depleted';
+  const score = parseInt(searchParams.get('score') || '42');
+  const type = searchParams.get('type') || 'performer';
 
-  const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const persona = getPersona(type);
-  const hook = getHook(type);
-
-  useEffect(() => {
-    track('result_view', { score, type, persona: persona.name });
-  }, []);
-
-  const handleShare = async () => {
-    track('share_click', { score, type, hook: hook.id });
-
-    if (!cardRef.current) return;
-    setLoading(true);
-
-    try {
-      const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
-        backgroundColor: '#FBF9F6',
-        logging: false,
-      });
-
-      const link = document.createElement('a');
-      link.download = `lingshu_${type}_${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-
-      setSaved(true);
-      track('share_success', { score, type, hook: hook.id });
-
-      setTimeout(() => setSaved(false), 3000);
-    } catch (error) {
-      console.error('Share failed:', error);
-    } finally {
-      setLoading(false);
-    }
+  const personas: Record<string, { title: string; mirror: string }> = {
+    performer: {
+      title: 'The Silent High Performer',
+      mirror: 'Looks stable. Internally exhausted.',
+    },
+    drifter: {
+      title: 'The Drifter',
+      mirror: 'Always recovering. Never fully restored.',
+    },
+    balanced: {
+      title: 'The Balanced One',
+      mirror: 'Recovered. Present. Resilient.',
+    },
   };
 
-  const handleCopy = async () => {
-    const text = `${persona.name}\n\n\u201c${hook.text}\u201d\n\nScore: ${score}/100\n\nFind yours \u2192 lingshu-app.vercel.app`;
-    await navigator.clipboard.writeText(text);
-  };
+  const persona = personas[type] || personas.performer;
 
   return (
-    <main className="min-h-screen bg-[#FBF9F6] flex flex-col items-center justify-center px-6 py-12">
-      <div className="max-w-md w-full space-y-8">
-        {/* Hidden share card */}
-        <div className="absolute left-[-9999px] top-0">
-          <ShareCard ref={cardRef} score={score} type={type} />
+    <main className="min-h-screen bg-cream flex items-center justify-center px-6 py-12">
+      <div className="max-w-2xl mx-auto text-center">
+        <div className="flex justify-center mb-6">
+          <ArchetypeSymbol type={type} />
         </div>
 
-        {/* Result display */}
-        <div className="text-center">
-          <div className="text-sm text-[#4A7C49] font-medium">{persona.name}</div>
-          <div className="text-5xl font-bold text-[#1A1A1A] mt-2">{score}</div>
-          <div className="text-sm text-[#8A8A8A]">/ 100</div>
-          <div className="mt-4 text-xl font-medium text-[#1A1A1A]">{persona.label}</div>
-          <p className="mt-2 text-[#4A4A4A]">{`\u201c${hook.text}\u201d`}</p>
+        <div className="text-forest/40 text-sm tracking-[0.2em] uppercase">Recovery Identity</div>
+        <h1 className="font-sans font-bold text-ink text-4xl sm:text-5xl lg:text-6xl mt-3 leading-tight">
+          {persona.title}
+        </h1>
+
+        <p className="text-ink/60 text-lg sm:text-xl mt-4 max-w-md mx-auto leading-relaxed font-light">
+          {persona.mirror}
+        </p>
+
+        <div className="w-12 h-0.5 bg-gold/30 mx-auto my-6" />
+
+        <div className="flex items-center justify-center gap-3">
+          <span className="text-ink/30 text-sm">Recovery Debt Index</span>
+          <span className="text-forest font-semibold text-4xl">{score}</span>
+          <span className="text-ink/20 text-sm">/ 100</span>
         </div>
 
-        {/* Share button */}
-        <button
-          onClick={handleShare}
-          disabled={loading}
-          className="w-full py-4 rounded-xl bg-[#4A7C49] text-white font-medium hover:bg-[#3D6A3C] transition disabled:opacity-50"
-        >
-          {loading ? 'Generating…' : saved ? '✓ Saved' : '📸 Share my recovery type'}
-        </button>
+        <div className="mt-8 flex justify-center gap-6 text-xs text-ink/30">
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-forest/40" />
+            Reset
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-forest/20" />
+            Restore
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-forest/10" />
+            Rebuild
+          </span>
+        </div>
 
-        {/* Copy caption */}
-        <button
-          onClick={handleCopy}
-          className="w-full py-3 rounded-xl bg-white border border-[#EAE5DE] text-[#1A1A1A] font-medium hover:border-[#4A7C49] transition"
-        >
-          📋 Copy caption
-        </button>
-
-        <button
-          onClick={() => router.push('/')}
-          className="w-full py-3 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] transition"
-        >
-          Back to home
-        </button>
-
-        {/* Guide to deeper report */}
-        <div className="pt-8 border-t border-[#EAE5DE] text-center">
-          <h3 className="text-xl font-semibold text-[#1A1A1A]">
-            Want to go deeper?
-          </h3>
-          <p className="text-[#6B6B6B] mt-2 text-sm max-w-sm mx-auto leading-relaxed">
-            Your full report includes: Five Elements analysis, TCM body mapping, personalized recovery plan, and more.
-          </p>
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button className="px-10 py-4 bg-forest text-white rounded-full text-base font-medium tracking-wide hover:bg-forest/90 transition-all duration-300 shadow-[0_8px_32px_rgba(35,65,50,0.12)]">
+            Share My Type
+          </button>
           <Link
-            href="/report"
-            className="inline-block mt-5 px-8 py-3 bg-[#4A7C49] text-white rounded-full text-sm font-medium hover:bg-[#3D6A3C] transition"
+            href="/recovery"
+            className="px-10 py-4 border border-ink/10 text-ink/50 rounded-full text-base font-medium hover:bg-white/50 transition-all duration-300"
           >
-            Unlock Your Full Report →
+            View Path &rarr;
           </Link>
         </div>
       </div>
@@ -122,7 +99,7 @@ function ResultContent() {
 
 export default function ResultPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FBF9F6] flex items-center justify-center text-[#8A8A8A]">Loading…</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-cream flex items-center justify-center text-ink/30">Loading…</div>}>
       <ResultContent />
     </Suspense>
   );
