@@ -1,18 +1,21 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { loadState, saveState } from '@/lib/state';
 
 export default function PayPage() {
   const router = useRouter();
 
   const handleUnlock = () => {
-    // 暂时标记为已付费
-    const saved = localStorage.getItem('recovery_state');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      parsed.isPremium = true;
-      localStorage.setItem('recovery_state', JSON.stringify(parsed));
-    }
+    const state = loadState();
+    const newState = {
+      ...state,
+      premium: {
+        isPremium: true,
+        purchasedAt: Date.now(),
+      },
+    };
+    saveState(newState);
     router.push('/recovery');
   };
 

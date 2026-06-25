@@ -1,97 +1,61 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAppState } from '@/lib/state';
 import {
-  calculateState,
   getStateLabel,
   getStateInsight,
   getStateEmoji,
-  calculateNextScore,
 } from '@/lib/recovery/engine';
 import { getCurrentTask } from '@/lib/recovery/tasks';
 import { generateInsight, generateStreakInsight } from '@/lib/recovery/insights';
-import { UserScore, RecoveryStateLevel } from '@/lib/recovery/types';
+import { RecoveryStateLevel } from '@/lib/recovery/types';
 
-const DEFAULT_SCORE: UserScore = {
-  fatigue: 60,
-  inputLoad: 65,
-  recoveryRate: 35,
-  stability: 50,
-  streak: 0,
-  isPremium: false,
-};
+function deriveLevel(fatigueLevel: number): RecoveryStateLevel {
+  if (fatigueLevel >= 8) return 'overloaded';
+  if (fatigueLevel >= 6) return 'depleting';
+  if (fatigueLevel >= 4) return 'unstable';
+  if (fatigueLevel >= 2) return 'recovering';
+  return 'stable';
+}
 
 export default function RecoveryPage() {
   const router = useRouter();
-  const [userScore, setUserScore] = useState<UserScore | null>(null);
-  const [currentState, setCurrentState] = useState<RecoveryStateLevel | null>(null);
-  const [task, setTask] = useState<any>(null);
+  const { state, updateState, ready } = useAppState();
   const [feedback, setFeedback] = useState<'done' | 'partial' | 'skip' | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [insight, setInsight] = useState('');
-  const [streakMessage, setStreakMessage] = useState('');
 
-  useEffect(() => {
-    const saved = localStorage.getItem('recovery_state');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setUserScore(parsed);
-      const state = calculateState(parsed);
-      setCurrentState(state);
-      setTask(getCurrentTask(state));
-    } else {
-      // 首次进入，使用默认值
-      setUserScore(DEFAULT_SCORE);
-      const state = calculateState(DEFAULT_SCORE);
-      setCurrentState(state);
-      setTask(getCurrentTask(state));
-    }
-  }, []);
+  const currentState = useMemo(() => deriveLevel(state.recovery.fatigueLevel), [state.recovery.fatigueLevel]);
+  const task = useMemo(() => getCurrentTask(currentState), [currentState]);
+  const isPremium = state.premium.isPremium;
 
-  const handleSubmit = async () => {
-    if (!feedback || !userScore || !currentState || !task) return;
+  const handleSubmit = () => {
+    if (!feedback) return;
 
-    const newScore = calculateNextScore(userScore, feedback);
-    const newState = calculateState(newScore);
-    const newInsight = generateInsight(currentState, feedback);
-    const streakMsg = generateStreakInsight(newScore.streak);
+    const delta = feedback === 'done' ? -2 : feedback === 'partial' ? -1 : 1;
+    const scoreDelta = feedback === 'done' ? 1 : feedback === 'partial' ? 0 : -1;
+    const newStreak = feedback === 'done' ? state.recovery.streak + 1 : 0;
 
-    localStorage.setItem('recovery_state', JSON.stringify(newScore));
-    setUserScore(newScore);
-    setCurrentState(newState);
-    setInsight(newInsight);
-    setStreakMessage(streakMsg);
+    updateState({
+      recovery: {
+        ...state.recovery,
+        fatigueLevel: Math.max(1, Math.min(10, state.recovery.fatigueLevel + delta)),
+        recoveryScore: Math.max(0, state.recovery.recoveryScore + scoreDelta),
+        streak: newStreak,
+        lastTaskId: task?.id ?? null,
+      },
+    });
+
     setSubmitted(true);
-
-    try {
-      await fetch('/api/recovery/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          state: currentState,
-          feedback,
-          newState,
-          score: newScore,
-        }),
-      });
-    } catch (e) {
-      // 静默失败，不影响用户体验
-    }
   };
 
   const handleReset = () => {
     setSubmitted(false);
     setFeedback(null);
-    // 重新加载任务
-    if (userScore) {
-      const state = calculateState(userScore);
-      setCurrentState(state);
-      setTask(getCurrentTask(state));
-    }
   };
 
-  if (!currentState || !task || !userScore) {
+  if (!ready) {
     return (
       <main style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '40px 20px' }}>
         <div style={{ maxWidth: '440px', margin: '0 auto', textAlign: 'center' }}>
@@ -100,6 +64,17 @@ export default function RecoveryPage() {
       </main>
     );
   }
+
+  if (!task) return null;
+
+  const streakMsg = generateStreakInsight(state.recovery.streak);
+  const insightText = submitted ? generateInsight(currentState, feedback!) : '';
+
+  const prevLevel = deriveLevel(
+    submitted
+      ? state.recovery.fatigueLevel
+      : currentState === 'overloaded' ? 8 : currentState === 'depleting' ? 6 : currentState === 'unstable' ? 4 : 2
+  );
 
   return (
     <main style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '40px 20px' }}>
@@ -119,10 +94,10 @@ export default function RecoveryPage() {
         </div>
 
         {/* 连续完成天数 */}
-        {userScore.streak > 0 && (
+        {state.recovery.streak > 0 && (
           <div style={{ textAlign: 'center', marginTop: '12px' }}>
             <span style={{ fontSize: '13px', color: 'var(--color-primary)', fontWeight: 500 }}>
-              🔥 连续 {userScore.streak} 天
+              🔥 连续 {state.recovery.streak} 天
             </span>
           </div>
         )}
@@ -198,42 +173,18 @@ export default function RecoveryPage() {
                 💡 恢复洞察
               </p>
               <p style={{ fontSize: '16px', color: 'var(--color-text-primary)', lineHeight: 1.7 }}>
-                “{insight}”
+                “{insightText}”
               </p>
-              {streakMessage && (
+              {streakMsg && (
                 <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: '10px' }}>
-                  {streakMessage}
+                  {streakMsg}
                 </p>
               )}
             </div>
 
-            {/* 状态变化提示 */}
-            {currentState !== calculateState(userScore) && (
-              <div
-                style={{
-                  marginTop: '12px',
-                  padding: '12px 16px',
-                  background: 'var(--color-bg-card)',
-                  borderRadius: '12px',
-                  border: '1px solid var(--color-border)',
-                  textAlign: 'center',
-                }}
-              >
-                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-                  状态正在从 <strong>{getStateLabel(currentState)}</strong>{' '}
-                  转向 <strong style={{ color: 'var(--color-primary)' }}>
-                    {getStateLabel(calculateState(userScore))}
-                  </strong>
-                </p>
-              </div>
-            )}
-
             {/* 按钮组 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
-              <button
-                onClick={handleReset}
-                className="btn-primary"
-              >
+              <button onClick={handleReset} className="btn-primary">
                 明天继续 →
               </button>
               <button
@@ -250,7 +201,7 @@ export default function RecoveryPage() {
               >
                 回到首页
               </button>
-              {!userScore.isPremium && (
+              {!isPremium && (
                 <button
                   onClick={() => router.push('/pay')}
                   style={{
