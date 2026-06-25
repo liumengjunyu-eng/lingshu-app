@@ -23,14 +23,38 @@ function ReportContent() {
       const bloodType = searchParams.get("bloodType") || "";
       const intent = searchParams.get("intent") || "health";
 
-      const reportData = {
-        ...generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender, bloodType }),
-        intent,
-      };
-      setReport(reportData);
+      const reportData = generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender, bloodType });
+
+      // 尝试获取 AI 解读（失败不影响页面渲染）
+      fetch("/api/interpret", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          bazi: reportData.bazi,
+          naYin: reportData.naYin,
+          shishen: reportData.shishen,
+          lunarDate: reportData.lunarDate,
+          zodiac: reportData.zodiac,
+          wuxing: reportData.wuxing,
+          intent,
+          bloodType,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.sections && data.sections.length > 0) {
+            setReport({ ...reportData, intent, insights: data.sections });
+          } else {
+            setReport({ ...reportData, intent });
+          }
+        })
+        .catch(() => {
+          // AI 解读失败，使用规则引擎 fallback
+          setReport({ ...reportData, intent });
+        });
     } catch (e: any) {
       setError("Failed to generate report: " + (e?.message || "Unknown error"));
-    } finally {
       setLoading(false);
     }
   }, [searchParams]);
