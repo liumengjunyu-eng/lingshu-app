@@ -144,7 +144,7 @@ export function calculateBaZi(
   const lunar = Lunar.fromYmdHms(birthYear, birthMonth, birthDay, birthHour, 0, 0);
 
   // 八字
-  const baziArr = lunar.getBaZi() as string[];
+  const baziArr = lunar.getBaZi().map((p: any) => p.toString());
   const baziMap: Record<string, string> = {
     year: baziArr[0],
     month: baziArr[1],

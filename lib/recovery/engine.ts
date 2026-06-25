@@ -73,3 +73,35 @@ export function calculateNextScore(
 
   return next;
 }
+
+export function getSymptoms(state: RecoveryStateLevel): string[] {
+  const map: Record<RecoveryStateLevel, string[]> = {
+    overloaded: [
+      '明明休息了，还是累',
+      '情绪容易被放大',
+      '精力恢复明显变慢',
+      '注意力难以集中',
+    ],
+    depleting: [
+      '工作后恢复变慢',
+      '情绪波动比以前频繁',
+      '睡眠质量不稳定',
+    ],
+    unstable: [
+      '节奏容易被打乱',
+      '做事效率时高时低',
+      '容易分心',
+    ],
+    recovering: [
+      '偶尔感觉恢复不够快',
+      '压力后需要更长时间调整',
+      '体力恢复比想象中慢',
+    ],
+    stable: [
+      '恢复速度正常',
+      '情绪稳定',
+      '精力储备充足',
+    ],
+  };
+  return map[state] || map.stable;
+}
