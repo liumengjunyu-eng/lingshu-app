@@ -57,7 +57,8 @@ export function captureSignal(
 export function getSignals(sessionId: string): SignalEntry[] {
   const memory = signalStore.get(sessionId);
   if (memory) return memory;
-  // Try localStorage
+  // Try localStorage (client only)
+  if (typeof window === 'undefined') return [];
   try {
     const key = `ls_signals_${sessionId}`;
     const stored = JSON.parse(localStorage.getItem(key) || '[]');

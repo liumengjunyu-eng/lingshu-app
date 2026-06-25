@@ -77,10 +77,8 @@ export function mapToHumanInput(diagnose: DiagnoseResult): HumanInput {
   };
 }
 
-export function loadDiagnoseResult(): DiagnoseResult | null {
+export function parseDiagnoseResult(raw: string): DiagnoseResult | null {
   try {
-    const raw = localStorage.getItem('diagnosis_result');
-    if (!raw) return null;
     const parsed = JSON.parse(raw);
 
     // diagnose/page.tsx saves: { engineInput, diagnoseResult: { persona, element, emotion, insights, energy, recovery, stress, recoveryLevel }, primaryIssue, followUpChoice }
@@ -104,6 +102,18 @@ export function loadDiagnoseResult(): DiagnoseResult | null {
     }
 
     return null;
+  } catch {
+    return null;
+  }
+}
+
+// Client-side only wrapper
+export function loadDiagnoseResult(): DiagnoseResult | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('diagnosis_result');
+    if (!raw) return null;
+    return parseDiagnoseResult(raw);
   } catch {
     return null;
   }

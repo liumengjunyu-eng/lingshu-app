@@ -13,10 +13,16 @@ import html2canvas from 'html2canvas';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
-// Tiny session ID
+// Tiny session ID - client only
 function sessionId(): string {
+  if (typeof window === 'undefined') return '';
   let id = sessionStorage.getItem('ls_session');
-  if (!id) { id = crypto.randomUUID?.() || `s_${Date.now()}_${Math.random().toString(36).slice(2)}`; sessionStorage.setItem('ls_session', id); }
+  if (!id) { 
+    id = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `s_${Date.now()}_${Math.random().toString(36).slice(2)}`; 
+    sessionStorage.setItem('ls_session', id); 
+  }
   return id;
 }
 

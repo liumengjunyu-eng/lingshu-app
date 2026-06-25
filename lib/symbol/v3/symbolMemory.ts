@@ -60,7 +60,8 @@ export function saveSnapshot(userId: string, snapshot: MemorySnapshot): void {
   // Keep max 20 snapshots
   if (snaps.length > 20) snaps.splice(0, snaps.length - 20);
 
-  // Persist to localStorage
+  // Persist to localStorage (client only)
+  if (typeof window === 'undefined') return;
   try {
     const key = `ls_memory_${userId}`;
     localStorage.setItem(key, JSON.stringify(snaps));
@@ -71,6 +72,7 @@ export function getMemory(userId: string): MemorySnapshot[] {
   const cached = memoryStore.get(userId);
   if (cached) return cached;
 
+  if (typeof window === 'undefined') return [];
   try {
     const key = `ls_memory_${userId}`;
     const stored = JSON.parse(localStorage.getItem(key) || '[]');
