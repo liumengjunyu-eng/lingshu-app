@@ -1,3 +1,4 @@
+// components/EmotionMirror.tsx
 'use client';
 
 import { EmotionType, EMOTION_MIRROR, EMOTION_LABELS } from '@/lib/inference/types';
@@ -11,23 +12,29 @@ export function EmotionMirror({ emotion }: EmotionMirrorProps) {
   const label = EMOTION_LABELS[emotion];
 
   return (
-    <div className="card" style={{ padding: '24px 20px', borderLeft: '3px solid var(--color-primary)', marginBottom: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        <span style={{ fontSize: '13px', color: '#8A8A8A' }}>💭 情绪镜像</span>
-        <span style={{ fontSize: '11px', color: '#8A8A8A', padding: '2px 8px', background: '#E8E3DA', borderRadius: '20px' }}>
-          {label}
-        </span>
-      </div>
-      <p style={{ fontSize: '18px', fontWeight: 600, color: '#2D2D2D', lineHeight: 1.5, marginBottom: '8px' }}>
-        <q>{data.insight}</q>
-      </p>
-      <p style={{ fontSize: '14px', color: '#5A5A5A', lineHeight: 1.7 }}>
-        {data.description}
-      </p>
-      <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #D4A85320' }}>
-        <p style={{ fontSize: '14px', color: '#5B8C5A', fontWeight: 500 }}>
-          → {data.recoveryFocus}
+    <div className="card-gold relative overflow-hidden">
+      {/* 装饰色块 */}
+      <div className="absolute top-0 left-0 w-1 h-full bg-[#D9B86C]" />
+      <div className="absolute -top-8 -right-8 w-32 h-32 bg-[#F5EDE0] rounded-full opacity-40" />
+
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-medium text-[#8A8A8A] tracking-widest">情绪镜像</span>
+          <span className="text-[10px] text-[#B0B0B0] bg-[#F5F0E8] px-2 py-0.5 rounded-full">
+            {label}
+          </span>
+        </div>
+        <p className="text-xl font-serif font-semibold text-[#1A1A1A] leading-relaxed">
+          {data.insight}
         </p>
+        <p className="text-[15px] text-[#4A4A4A] mt-3 leading-relaxed">
+          {data.description}
+        </p>
+        <div className="mt-4 pt-4 border-t border-[#E8DCC8]">
+          <p className="text-sm font-medium text-[#4A7C49]">
+            → {data.recoveryFocus}
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -1,124 +1,149 @@
+/* app/globals.css */
+
 /* ============================================================
- 灵枢 · 最终配色方案
+ 设计令牌（Design Tokens）
  ============================================================ */
 
 :root {
- /* 主色系统 */
- --color-primary: #5B8C5A;
- --color-primary-hover: #4A7A49;
- --color-primary-light: #E8F0E6;
+  /* 颜色 - 升级版 */
+  --color-bg: #FBF9F6;
+  --color-bg-card: #FFFFFF;
+  --color-bg-elevated: #FFFFFF;
 
- /* 背景系统 */
- --color-bg: #F5F0E8;
- --color-bg-card: #FAF8F4;
- --color-bg-input: #FFFFFF;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #4A4A4A;
+  --color-text-tertiary: #8A8A8A;
+  --color-text-muted: #B0B0B0;
 
- /* 强调色 */
- --color-gold: #D4A853;
- --color-gold-light: #F5EDE0;
+  --color-accent: #4A7C49;
+  --color-accent-hover: #3D6A3C;
+  --color-accent-light: #E8F0E6;
 
- /* 文字系统 */
- --color-text-primary: #2D2D2D;
- --color-text-secondary: #4A6A48;
- --color-text-muted: #B0B0B0;
+  --color-gold: #D9B86C;
+  --color-gold-light: #F5EDE0;
+  --color-gold-border: #E8DCC8;
 
- /* 边框系统 */
- --color-border: #E8E3DA;
- --color-border-focus: #5B8C5A;
+  --color-border: #EAE5DE;
 
- /* 功能色 */
- --color-success: #5B8C5A;
- --color-warning: #D4894A;
+  /* 间距 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+
+  /* 阴影 */
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.03);
+  --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 8px 48px rgba(0, 0, 0, 0.06);
+
+  /* 字体 */
+  --font-serif: 'Noto Serif SC', 'Georgia', '宋体', serif;
+  --font-sans: -apple-system, 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
 /* ============================================================
- 全局重置
+ 基础样式
  ============================================================ */
 
 * {
- margin: 0;
- padding: 0;
- box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 html {
- scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
- background: var(--color-bg);
- color: var(--color-text-primary);
- font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
- min-height: 100vh;
- -webkit-font-smoothing: antialiased;
- -moz-osx-font-smoothing: grayscale;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
 }
 
 /* ============================================================
- 排版工具类
+ 排版层级
  ============================================================ */
 
-.heading-xl {
- font-size: 32px;
- font-weight: 700;
- line-height: 1.2;
- color: var(--color-text-primary);
+.heading-display {
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
 }
 
-.heading-lg {
- font-size: 24px;
- font-weight: 600;
- line-height: 1.3;
- color: var(--color-text-primary);
+.heading-display-small {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
 }
 
-.heading-md {
- font-size: 20px;
- font-weight: 600;
- line-height: 1.4;
- color: var(--color-text-primary);
+.heading-section {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text-primary);
 }
 
-.body-text {
- font-size: 16px;
- font-weight: 400;
- line-height: 1.6;
- color: var(--color-text-primary);
+.heading-card {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text-primary);
+}
+
+.body-large {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.body-base {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }
 
 .body-small {
- font-size: 14px;
- font-weight: 400;
- line-height: 1.5;
- color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-text-tertiary);
 }
 
-/* ============================================================
- 按钮样式
- ============================================================ */
-
-.btn-primary {
- display: inline-block;
- width: 100%;
- padding: 16px 32px;
- background: var(--color-primary);
- color: #FFFFFF;
- font-size: 16px;
- font-weight: 500;
- text-align: center;
- border: none;
- border-radius: 12px;
- cursor: pointer;
- transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.btn-primary:hover {
- background: var(--color-primary-hover);
- transform: translateY(-1px);
-}
-
-.btn-primary:active {
- transform: translateY(0);
+.body-caption {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* ============================================================
@@ -126,17 +151,118 @@ body {
  ============================================================ */
 
 .card {
- background: var(--color-bg-card);
- border: 1px solid var(--color-border);
- border-radius: 16px;
- padding: 24px;
+  background: var(--color-bg-card);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.card-elevated {
+  background: var(--color-bg-elevated);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-elevated);
 }
 
 .card-gold {
- background: var(--color-bg-card);
- border: 2px solid var(--color-gold);
- border-radius: 16px;
- padding: 24px;
+  background: var(--color-bg-card);
+  border: 0.5px solid var(--color-gold-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.card-gold:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+/* ============================================================
+ 按钮样式
+ ============================================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 14px 32px;
+  background: var(--color-accent);
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 124, 73, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.btn-ghost:hover {
+  color: var(--color-text-primary);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 20px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-outline:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 /* ============================================================
@@ -144,45 +270,102 @@ body {
  ============================================================ */
 
 .input-option {
- display: block;
- width: 100%;
- padding: 16px 20px;
- background: var(--color-bg-card);
- border: 1.5px solid var(--color-border);
- border-radius: 12px;
- font-size: 16px;
- color: var(--color-text-primary);
- cursor: pointer;
- transition: border-color 0.2s ease, background 0.2s ease;
- text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--color-bg-card);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+  box-shadow: var(--shadow-card);
 }
 
 .input-option:hover {
- border-color: var(--color-primary);
+  border-color: var(--color-accent);
+}
+
+.input-option:active {
+  transform: scale(0.99);
 }
 
 .input-option.selected {
- border-color: var(--color-primary);
- background: var(--color-primary-light);
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+  box-shadow: 0 0 0 4px rgba(74, 124, 73, 0.08);
 }
+
+/* ============================================================
+ 工具类
+ ============================================================ */
+
+.text-serif { font-family: var(--font-serif); }
+.text-accent { color: var(--color-accent); }
+.text-gold { color: var(--color-gold); }
+.text-muted { color: var(--color-text-muted); }
+.text-tertiary { color: var(--color-text-tertiary); }
+
+.bg-accent-light { background: var(--color-accent-light); }
+.border-gold { border-color: var(--color-gold-border); }
+.radius-lg { border-radius: var(--radius-lg); }
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-elevated { box-shadow: var(--shadow-elevated); }
+
+/* 间距工具 */
+.mt-xs { margin-top: var(--space-xs); }
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+.mt-xl { margin-top: var(--space-xl); }
+.mt-2xl { margin-top: var(--space-2xl); }
+
+.mb-xs { margin-bottom: var(--space-xs); }
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-lg { margin-bottom: var(--space-lg); }
+.mb-xl { margin-bottom: var(--space-xl); }
+
+.p-xs { padding: var(--space-xs); }
+.p-sm { padding: var(--space-sm); }
+.p-md { padding: var(--space-md); }
+.p-lg { padding: var(--space-lg); }
+.p-xl { padding: var(--space-xl); }
 
 /* ============================================================
  滚动条
  ============================================================ */
 
-::-webkit-scrollbar {
- width: 4px;
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* ============================================================
+ 动画
+ ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-track {
- background: transparent;
+@keyframes fadeInSlow {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-thumb {
- background: var(--color-border);
- border-radius: 4px;
+.animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+.animate-fade-in-slow { animation: fadeInSlow 0.8s ease-out forwards; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-thumb:hover {
- background: var(--color-text-muted);
-}
+.animate-slide-up { animation: slideUp 0.6s ease-out forwards; }

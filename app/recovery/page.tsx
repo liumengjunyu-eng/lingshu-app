@@ -129,7 +129,7 @@ export default function RecoveryPage() {
   if (!ready || !currentState || !userScore) {
     return (
       <main style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '40px 20px' }}>
-        <div style={{ maxWidth: '440px', margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ maxWidth: '560px', margin: '0 auto', textAlign: 'center' }}>
           <p style={{ color: 'var(--color-text-muted)' }}>加载中...</p>
         </div>
       </main>
@@ -138,7 +138,7 @@ export default function RecoveryPage() {
 
   return (
     <main style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '440px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
         {/* 状态展示 */}
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '40px', marginBottom: '4px' }}>{getStateEmoji(currentState)}</div>

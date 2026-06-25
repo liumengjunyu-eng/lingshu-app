@@ -1,66 +1,26 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
+import { HookLine } from '@/components/HookLine';
 
 export default function HomePage() {
- const router = useRouter();
+  return (
+    <main className="min-h-screen bg-[#FBF9F6] flex flex-col items-center justify-center px-6 py-12">
+      <div className="max-w-2xl mx-auto text-center space-y-8">
+        <HookLine />
 
- return (
- <main
- style={{
- minHeight: '100vh',
- background: 'var(--color-bg)',
- display: 'flex',
- flexDirection: 'column',
- alignItems: 'center',
- justifyContent: 'center',
- padding: '24px 20px',
- }}
- >
- <div style={{ maxWidth: '400px', width: '100%', textAlign: 'center' }}>
- <h1
- style={{
- fontSize: '32px',
- fontWeight: 700,
- lineHeight: 1.2,
- color: 'var(--color-text-primary)',
- marginBottom: '8px',
- }}
- >
- 睡觉解决不了疲惫。
- <br />
- 恢复才能。
- </h1>
+        <p className="body-large max-w-md mx-auto">
+          用 1 分钟了解你当前的真实状态，找到适合你的恢复节奏。
+        </p>
 
- <p
- style={{
- fontSize: '16px',
- color: 'var(--color-text-secondary)',
- marginTop: '12px',
- lineHeight: 1.5,
- }}
- >
- 用 1 分钟了解你当前的真实状态，找到适合你的恢复节奏。
- </p>
+        <a
+          href="/diagnose"
+          className="btn-primary inline-flex w-auto px-12 py-4 mx-auto text-lg"
+        >
+          开始免费诊断 →
+        </a>
 
- <button
- onClick={() => router.push('/diagnose')}
- className="btn-primary"
- style={{ marginTop: '28px' }}
- >
- 开始免费诊断
- </button>
-
- <p
- style={{
- fontSize: '13px',
- color: 'var(--color-text-muted)',
- marginTop: '16px',
- }}
- >
- 1 分钟 · 免费 · 已帮助 200+ 人了解自己的恢复状态
- </p>
- </div>
- </main>
- );
+        <p className="body-caption mt-6">
+          1 分钟 · 免费 · 已帮助 200+ 人了解自己的恢复状态
+        </p>
+      </div>
+    </main>
+  );
 }

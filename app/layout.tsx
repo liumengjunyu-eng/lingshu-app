@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "灵枢 - 你的恢复指南",
-  description:
-    "1分钟了解你的真实状态，找到适合你的恢复节奏。",
+  title: '灵枢 · 你的恢复系统',
+  description: '基于身体状态，帮你找到恢复节奏',
 };
 
 export default function RootLayout({
