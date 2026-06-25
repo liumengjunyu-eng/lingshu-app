@@ -12,30 +12,30 @@ export function Hero() {
 
       <div className="max-w-3xl mx-auto text-center relative z-10">
         <div className="flex justify-center text-xs sm:text-sm text-[#4A7C49]/50 tracking-[0.2em] uppercase mb-8">
-          <span>5 questions · 5 types · 1 diagnosis</span>
+          <span>BaZi · Five Elements · TCM</span>
         </div>
 
         <h1 className="font-serif font-bold text-[#1A1A1A] text-3xl sm:text-4xl md:text-5xl leading-[1.2] tracking-[-0.01em]">
-          You&apos;re not tired.
+          Your energy pattern
           <br />
-          <span className="text-[#4A7C49]">You&apos;re in Recovery Debt.</span>
+          <span className="text-[#4A7C49]">already knows the answer.</span>
         </h1>
 
         <p className="text-[#6B6B6B] text-base sm:text-lg max-w-md mx-auto mt-6 leading-relaxed">
-          You sleep. You rest. You take weekends off. Yet you still feel exhausted.
+          Enter your birth information for a complete BaZi analysis—five elements, body mapping, and personalized wellness insights.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center">
           <a
-            href="/diagnose"
+            href="/report"
             className="px-12 py-4 bg-[#4A7C49] text-white rounded-full text-[15px] sm:text-base font-medium tracking-wide hover:bg-[#3D6A3C] transition-all duration-300 shadow-[0_8px_32px_rgba(74,124,73,0.15)] hover:shadow-[0_12px_48px_rgba(74,124,73,0.25)] hover:-translate-y-0.5"
           >
-            Start Free Diagnosis
+            Start Your Assessment →
           </a>
         </div>
 
         <p className="text-[#B0B0B0] text-xs sm:text-sm mt-8 tracking-wide">
-          Free &middot; 2 minutes &middot; No signup required
+          Free &middot; Just your birth info &middot; No signup required
         </p>
       </div>
     </section>

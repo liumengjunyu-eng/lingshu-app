@@ -1,281 +1,368 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { generateReport, WUXING_COLORS, WUXING_NAMES, BLOOD_TYPE_MAP, getBloodTypeAnalysis } from '@/lib/bazi-engine';
+import { useState, useRef } from 'react';
+import { generateReport, WUXING_COLORS, WUXING_NAMES } from '@/lib/bazi-engine';
 import { getWellnessPlan } from '@/lib/wellness-data';
+import { getPersona, getHook } from '@/lib/persona';
+import html2canvas from 'html2canvas';
 
-function ReportContent() {
-  const searchParams = useSearchParams();
+const ELEMENT_CYCLE: Record<string, string> = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' };
+const ELEMENT_EMOJI: Record<string, string> = { '木': '🌳', '火': '🔥', '土': '⛰️', '金': '⚔️', '水': '💧' };
+const ELEMENT_NAME: Record<string, string> = { '木': 'Wood', '火': 'Fire', '土': 'Earth', '金': 'Metal', '水': 'Water' };
+
+export default function ReportPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    year: '',
+    month: '',
+    day: '',
+    hour: '',
+    gender: 'male',
+    bloodType: '',
+  });
+  const [submitted, setSubmitted] = useState(false);
   const [report, setReport] = useState<any>(null);
-  const [showPayModal, setShowPayModal] = useState(false);
-  const [payEmail, setPayEmail] = useState('');
-  const [payStatus, setPayStatus] = useState<'idle' | 'loading' | 'done'>('idle');
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showWaitlist, setShowWaitlist] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [sharing, setSharing] = useState(false);
+  const [shared, setShared] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const year = parseInt(formData.year);
+    const month = parseInt(formData.month);
+    const day = parseInt(formData.day);
+    const hour = formData.hour ? parseInt(formData.hour) : 12;
+
+    if (!formData.name || isNaN(year) || isNaN(month) || isNaN(day)) {
+      setError('Please fill in your name and birth date.');
+      return;
+    }
+
     try {
-      const name = searchParams.get('name') || 'You';
-      const year = parseInt(searchParams.get('year') || '1990');
-      const month = parseInt(searchParams.get('month') || '1');
-      const day = parseInt(searchParams.get('day') || '1');
-      const hour = parseInt(searchParams.get('hour') || '12');
-      const gender = searchParams.get('gender') || 'male';
-      const bloodType = searchParams.get('bloodType') || '';
-
-      const reportData = generateReport({
-        name,
+      const data = generateReport({
+        name: formData.name,
         birthYear: year,
         birthMonth: month,
         birthDay: day,
         birthHour: hour,
-        gender,
-        bloodType: bloodType || undefined,
+        gender: formData.gender,
+        bloodType: formData.bloodType || undefined,
       });
+      setReport({ ...data, bloodType: formData.bloodType || null });
+      setSubmitted(true);
 
-      setReport({ ...reportData, bloodType });
-      setLoading(false);
-
-      // Async AI interpretation (non-blocking)
+      // Async AI interpretation
       fetch('/api/interpret', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
-          bazi: reportData.bazi,
-          naYin: reportData.naYin,
-          shishen: reportData.shishen,
-          lunarDate: reportData.lunarDate,
-          zodiac: reportData.zodiac,
-          wuxing: reportData.wuxing,
+          name: formData.name,
+          bazi: data.bazi,
+          naYin: data.naYin,
+          shishen: data.shishen,
+          lunarDate: data.lunarDate,
+          zodiac: data.zodiac,
+          wuxing: data.wuxing,
           intent: 'health',
-          bloodType,
+          bloodType: formData.bloodType,
         }),
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.sections && data.sections.length > 0) {
-            setReport((prev: any) => prev ? { ...prev, aiSections: data.sections } : prev);
-          }
+        .then((r) => r.json())
+        .then((ai) => {
+          if (ai.sections?.length) setReport((prev: any) => ({ ...prev, aiSections: ai.sections }));
         })
         .catch(() => {});
     } catch (e: any) {
-      setError(e?.message || 'Failed to generate report');
-      setLoading(false);
+      setError(e?.message || 'Failed to generate report.');
     }
-  }, [searchParams]);
+  };
 
-  if (loading) {
+  const handleShare = async () => {
+    if (!cardRef.current) return;
+    setSharing(true);
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 2,
+        backgroundColor: '#FBF9F6',
+        logging: false,
+      });
+      const link = document.createElement('a');
+      link.download = `lingshu_${formData.name}_${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      setShared(true);
+      setTimeout(() => setShared(false), 3000);
+    } catch { /* silent */ }
+    setSharing(false);
+  };
+
+  // --- FORM VIEW ---
+  if (!submitted) {
     return (
-      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '36px', marginBottom: '16px' }}>🔮</div>
-          <p style={{ color: 'var(--color-text-muted)' }}>Calculating your energy profile...</p>
+      <main className="min-h-screen bg-[#FBF9F6] flex flex-col items-center justify-center px-6 py-12">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <p className="text-xs text-[#4A7C49]/50 tracking-[0.2em] uppercase">LingShu</p>
+            <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mt-3">Start Your Assessment</h1>
+            <p className="text-sm text-[#6B6B6B] mt-2">Your birth information unlocks a complete BaZi analysis.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Name</label>
+              <input
+                type="text" name="name" value={formData.name} onChange={handleChange}
+                placeholder="Your name"
+                className="w-full px-4 py-3 rounded-xl border border-[#EAE5DE] bg-white text-[#1A1A1A] text-sm outline-none focus:border-[#4A7C49] transition"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Year</label>
+                <input
+                  type="number" name="year" value={formData.year} onChange={handleChange}
+                  placeholder="1990" min="1900" max="2100"
+                  className="w-full px-3 py-3 rounded-xl border border-[#EAE5DE] bg-white text-[#1A1A1A] text-sm outline-none focus:border-[#4A7C49] transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Month</label>
+                <input
+                  type="number" name="month" value={formData.month} onChange={handleChange}
+                  placeholder="6" min="1" max="12"
+                  className="w-full px-3 py-3 rounded-xl border border-[#EAE5DE] bg-white text-[#1A1A1A] text-sm outline-none focus:border-[#4A7C49] transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Day</label>
+                <input
+                  type="number" name="day" value={formData.day} onChange={handleChange}
+                  placeholder="15" min="1" max="31"
+                  className="w-full px-3 py-3 rounded-xl border border-[#EAE5DE] bg-white text-[#1A1A1A] text-sm outline-none focus:border-[#4A7C49] transition"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Birth Hour</label>
+                <select
+                  name="hour" value={formData.hour} onChange={handleChange}
+                  className="w-full px-3 py-3 rounded-xl border border-[#EAE5DE] bg-white text-[#1A1A1A] text-sm outline-none focus:border-[#4A7C49] transition"
+                >
+                  <option value="">Not sure</option>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>{i.toString().padStart(2, '0')}:00</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Gender</label>
+                <select
+                  name="gender" value={formData.gender} onChange={handleChange}
+                  className="w-full px-3 py-3 rounded-xl border border-[#EAE5DE] bg-white text-[#1A1A1A] text-sm outline-none focus:border-[#4A7C49] transition"
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-[#1A1A1A] mb-1.5">Blood Type <span className="text-[#B0B0B0]">(optional)</span></label>
+              <select
+                name="bloodType" value={formData.bloodType} onChange={handleChange}
+                className="w-full px-3 py-3 rounded-xl border border-[#EAE5DE] bg-white text-[#1A1A1A] text-sm outline-none focus:border-[#4A7C49] transition"
+              >
+                <option value="">Not sure</option>
+                <option value="A">Type A</option>
+                <option value="B">Type B</option>
+                <option value="O">Type O</option>
+                <option value="AB">Type AB</option>
+              </select>
+            </div>
+
+            {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+
+            <button type="submit" className="w-full py-4 bg-[#4A7C49] text-white rounded-full text-sm font-medium hover:bg-[#3D6A3C] transition shadow-[0_8px_32px_rgba(74,124,73,0.15)]">
+              Generate My Report
+            </button>
+          </form>
+
+          <p className="text-xs text-[#B0B0B0] text-center mt-6">
+            Your data is not stored. This is a local calculation.
+          </p>
         </div>
       </main>
     );
   }
 
-  if (error || !report) {
-    return (
-      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', padding: '24px', maxWidth: '400px' }}>
-          <div style={{ fontSize: '36px', marginBottom: '12px' }}>⚠️</div>
-          <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>Generation Failed</p>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '20px' }}>{error || 'Please try again'}</p>
-          <button onClick={() => window.history.back()} className="btn-primary">Try Again</button>
-        </div>
-      </main>
-    );
-  }
+  // --- REPORT VIEW ---
+  if (!report) return null;
 
   const { name, bazi, naYin, shishen, lunarDate, zodiac, wuxing, insights, bloodType, bloodTypeData, aiSections } = report;
   const baziKeys = ['year', 'month', 'day', 'hour'] as const;
   const dayLabel = ['Year', 'Month', 'Day', 'Hour'];
 
-  // Element generation cycle
-  const wuxingCycle: Record<string, string> = { '\u6728': '\u706b', '\u706b': '\u571f', '\u571f': '\u91d1', '\u91d1': '\u6c34', '\u6c34': '\u6728' };
-
-  const elementEmoji: Record<string, string> = {
-    '\u6728': '🌳', '\u706b': '🔥', '\u571f': '⛰️', '\u91d1': '⚔️', '\u6c34': '💧',
-  };
-
-  const getElementNames: Record<string, string> = {
-    '\u6728': 'Wood', '\u706b': 'Fire', '\u571f': 'Earth', '\u91d1': 'Metal', '\u6c34': 'Water',
-  };
+  // Derive FREEZE persona from birth info as a personality overlay
+  const persona = getPersona(wuxing.weakest === '火' || wuxing.weakest === '木' ? 'depleted' : wuxing.weakest === '水' ? 'drifting' : 'debt');
+  const hook = getHook(persona.type);
 
   return (
-    <main style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 16px 48px' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '4px' }}>
-            LingShu · Five Elements Report
-          </p>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-            {name} · {zodiac} · {lunarDate}
-          </p>
+    <main className="min-h-screen bg-[#FBF9F6]">
+      <div className="max-w-md mx-auto px-4 py-6 pb-20">
+        {/* Hidden share card */}
+        <div className="absolute left-[-9999px] top-0">
+          <div ref={cardRef} className="bg-[#FBF9F6] p-8 w-[360px]">
+            <div className="text-center">
+              <p className="text-lg font-serif font-bold text-[#1A1A1A]">{name}&apos;s Profile</p>
+              <p className="text-xs text-[#4A7C49] mt-1">{persona.name} · {zodiac}</p>
+              <p className="text-[#6B6B6B] text-sm mt-3 italic">{`"${hook.text}"`}</p>
+              <div className="flex justify-center gap-1 mt-4">
+                {(Object.entries(wuxing.percentages) as [string, number][]).map(([el, pct]) => (
+                  <div key={el} className="flex flex-col items-center w-12">
+                    <div className="w-3 h-3 rounded-full" style={{ background: WUXING_COLORS[el] }} />
+                    <span className="text-[10px] text-[#8A8A8A] mt-1">{pct}%</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-[#B0B0B0] mt-4">lingshu-app.vercel.app</p>
+            </div>
+          </div>
         </div>
 
-        {/* Section 1: Five Elements Energy */}
-        <div className="card-gold" style={{ marginBottom: '12px', textAlign: 'center', padding: '24px 20px' }}>
-          <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-            {name}&apos;s Five Elements
-          </p>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '20px' }}>
-            Your BaZi · {bazi.year} {bazi.month} {bazi.day} {bazi.hour}
-          </p>
+        {/* Header */}
+        <div className="text-center mb-6">
+          <p className="text-xs text-[#4A7C49]/50 tracking-[0.2em] uppercase mb-1">LingShu · Five Elements Report</p>
+          <p className="text-sm text-[#6B6B6B]">{name} · {zodiac} · {lunarDate}</p>
+        </div>
 
-          {/* Element bars */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {(Object.entries(wuxing.percentages as Record<string, number>)).map(([element, pct]) => (
-              <div key={element}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: WUXING_COLORS[element], display: 'inline-block' }} />
-                    <span style={{ fontSize: '14px', color: 'var(--color-text-primary)', fontWeight: 500 }}>{elementEmoji[element] || ''} {getElementNames[element] || element}</span>
-                    {element === wuxing.strongest && <span style={{ fontSize: '11px', color: 'var(--color-warning)' }}>↑ Dominant</span>}
-                    {element === wuxing.weakest && <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>↓ Low</span>}
-                  </div>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>{pct}%</span>
-                </div>
-                <div style={{ width: '100%', height: '6px', background: 'var(--color-border)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ width: `${pct}%`, height: '100%', background: WUXING_COLORS[element], borderRadius: '3px', transition: 'width 0.8s ease' }} />
-                </div>
+        {/* Persona tag (from FREEZE) */}
+        <div className="bg-white rounded-xl border border-[#EAE5DE] p-4 mb-3 text-center">
+          <p className="text-xs text-[#4A7C49] font-medium">{persona.name}</p>
+          <p className="text-sm text-[#1A1A1A] mt-1 italic">{`"${hook.text}"`}</p>
+        </div>
+
+        {/* Section 1: Five Elements */}
+        <div className="bg-gradient-to-br from-[#FDFBF9] to-[#F8F5F0] rounded-xl border border-[#EAE5DE]/80 p-5 mb-3 text-center">
+          <p className="text-sm font-semibold text-[#1A1A1A] mb-4">{name}&apos;s Five Elements</p>
+          {(Object.entries(wuxing.percentages) as [string, number][]).map(([el, pct]) => (
+            <div key={el} className="mb-2.5">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm text-[#1A1A1A] font-medium">{ELEMENT_EMOJI[el]} {ELEMENT_NAME[el] || el}</span>
+                <span className="text-xs text-[#6B6B6B]">{el === wuxing.strongest ? '↑ Dominant' : el === wuxing.weakest ? '↓ Low' : ''}</span>
               </div>
-            ))}
-          </div>
-
-          {/* Element summary */}
-          <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--color-border)' }}>
-            <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
-              Your <strong>{getElementNames[wuxing.strongest] || wuxing.strongest}</strong> element is dominant, while <strong>{getElementNames[wuxing.weakest] || wuxing.weakest}</strong> is low.
-              {wuxingCycle[wuxing.weakest] ? (
-                <> {getElementNames[wuxingCycle[wuxing.weakest]] || wuxingCycle[wuxing.weakest]} nurtures {getElementNames[wuxing.weakest] || wuxing.weakest} — try strengthening it through {getElementNames[wuxingCycle[wuxing.weakest]]?.toLowerCase() || wuxingCycle[wuxing.weakest]}-related practices.</>
-              ) : (
-                <> Balance is key — focus on {getElementNames[wuxing.weakest] || wuxing.weakest}-supporting activities.</>
-              )}
+              <div className="w-full h-1.5 bg-[#EAE5DE] rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: WUXING_COLORS[el] }} />
+              </div>
+              <div className="text-right text-xs text-[#8A8A8A] mt-0.5">{pct}%</div>
+            </div>
+          ))}
+          <div className="mt-4 pt-3 border-t border-[#EAE5DE]">
+            <p className="text-sm text-[#1A1A1A] leading-relaxed">
+              Your <strong>{ELEMENT_NAME[wuxing.strongest]}</strong> is dominant, while <strong>{ELEMENT_NAME[wuxing.weakest]}</strong> needs attention.
+              Nurture it through {ELEMENT_CYCLE[wuxing.weakest] ? ELEMENT_NAME[ELEMENT_CYCLE[wuxing.weakest]] || '' : ELEMENT_NAME[wuxing.weakest]}-related practices.
             </p>
           </div>
         </div>
 
-        {/* Section 2: BaZi Four Pillars */}
-        <div className="card" style={{ marginBottom: '12px', textAlign: 'center' }}>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '14px', letterSpacing: '1px' }}>
-            BaZi · Four Pillars
-          </p>
-          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+        {/* Section 2: BaZi Pillars */}
+        <div className="bg-white rounded-xl border border-[#EAE5DE] p-4 mb-3 text-center">
+          <p className="text-xs text-[#8A8A8A] tracking-wide mb-3">BaZi · Four Pillars</p>
+          <div className="flex gap-2">
             {baziKeys.map((key, i) => (
-              <div
-                key={key}
-                style={{
-                  flex: 1,
-                  padding: '12px 8px',
-                  background: 'var(--color-bg)',
-                  borderRadius: '10px',
-                  border: `1.5px solid ${WUXING_COLORS[wuxing.strongest]}30`,
-                }}
-              >
-                <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{dayLabel[i]}</p>
-                <p style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>{bazi[key]}</p>
-                <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{shishen[key]}</p>
+              <div key={key} className="flex-1 bg-[#FBF9F6] rounded-lg p-2.5 border border-[#EAE5DE]/60">
+                <p className="text-[10px] text-[#8A8A8A] mb-1">{dayLabel[i]}</p>
+                <p className="text-lg font-bold text-[#1A1A1A]">{bazi[key]}</p>
+                <p className="text-[10px] text-[#4A7C49] mt-0.5">{shishen[key]}</p>
               </div>
             ))}
           </div>
-          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '12px', lineHeight: 1.4 }}>
-            Na Yin: {naYin}
-          </p>
+          <p className="text-xs text-[#8A8A8A] mt-3">Na Yin: {naYin}</p>
         </div>
 
-        {/* Section 3: Inner Energy Interpretation (AI) */}
-        <div style={{ marginBottom: '12px' }}>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px', textAlign: 'center', letterSpacing: '1px' }}>
-            Energy Interpretation
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {(aiSections && aiSections.length >= 3 ? aiSections : (insights || [])).slice(0, 3).map((text: string, i: number) => (
-              <div key={i} className="card" style={{ padding: '16px 20px', borderLeft: `3px solid ${i === 0 ? WUXING_COLORS[wuxing.strongest] : i === 1 ? WUXING_COLORS[wuxing.weakest] : 'var(--color-gold)'}` }}>
-                <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', lineHeight: 1.6 }}>{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Section 4: Blood Type Analysis */}
-        {bloodType && bloodTypeData && (
-          <div className="card" style={{ marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <span style={{ fontSize: '20px' }}>🧬</span>
-              <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                Type {bloodTypeData.bloodType} · {getElementNames[bloodTypeData.fiveElement] || bloodTypeData.fiveElement} Element
-              </p>
+        {/* Section 3: Insights */}
+        <div className="mb-3">
+          <p className="text-xs text-[#8A8A8A] text-center tracking-wide mb-2">Energy Interpretation</p>
+          {(aiSections?.length ? aiSections : insights).slice(0, 3).map((text: string, i: number) => (
+            <div key={i} className="bg-white rounded-xl border border-[#EAE5DE] p-4 mb-2 border-l-[3px]"
+              style={{ borderLeftColor: i === 0 ? WUXING_COLORS[wuxing.strongest] : i === 1 ? WUXING_COLORS[wuxing.weakest] : '#C9A96E' }}>
+              <p className="text-sm text-[#1A1A1A] leading-relaxed">{text}</p>
             </div>
+          ))}
+        </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
-              {bloodTypeData.traits.map((trait: string, i: number) => (
-                <span key={i} style={{ padding: '3px 10px', fontSize: '12px', background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: '20px' }}>
-                  {trait}
-                </span>
+        {/* Section 4: Blood Type */}
+        {bloodTypeData && (
+          <div className="bg-white rounded-xl border border-[#EAE5DE] p-4 mb-3">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🧬</span>
+              <p className="text-sm font-semibold text-[#1A1A1A]">{bloodTypeData.bloodType} · {ELEMENT_NAME[bloodTypeData.fiveElement] || bloodTypeData.fiveElement}</p>
+            </div>
+            <div className="flex flex-wrap gap-1 mb-3">
+              {bloodTypeData.traits.map((t: string, i: number) => (
+                <span key={i} className="px-2.5 py-1 text-[11px] bg-[#4A7C49]/10 text-[#4A7C49] rounded-full">{t}</span>
               ))}
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-              <div style={{ padding: '10px', background: 'var(--color-bg)', borderRadius: '10px' }}>
-                <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '2px' }}>Strengths</p>
-                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>{bloodTypeData.strength}</p>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="bg-[#FBF9F6] rounded-lg p-2.5">
+                <p className="text-[10px] text-[#4A7C49] font-semibold mb-0.5">Strengths</p>
+                <p className="text-xs text-[#4A4A4A]">{bloodTypeData.strength}</p>
               </div>
-              <div style={{ padding: '10px', background: 'var(--color-bg)', borderRadius: '10px' }}>
-                <p style={{ fontSize: '11px', color: 'var(--color-warning)', fontWeight: 600, marginBottom: '2px' }}>Watch For</p>
-                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>{bloodTypeData.weakness}</p>
+              <div className="bg-[#FBF9F6] rounded-lg p-2.5">
+                <p className="text-[10px] text-[#C9A96E] font-semibold mb-0.5">Watch For</p>
+                <p className="text-xs text-[#4A4A4A]">{bloodTypeData.weakness}</p>
               </div>
             </div>
-
             {bloodTypeData.combinedAdvice && (
-              <div style={{ padding: '12px', background: 'var(--color-gold-light)', borderRadius: '10px', borderLeft: '3px solid var(--color-gold)' }}>
-                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-gold)', marginBottom: '4px' }}>Blood Type + Elements</p>
-                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{bloodTypeData.combinedAdvice}</p>
+              <div className="bg-[#C9A96E]/10 rounded-lg p-3 border-l-[3px] border-[#C9A96E]">
+                <p className="text-xs text-[#1A1A1A] leading-relaxed">{bloodTypeData.combinedAdvice}</p>
               </div>
             )}
           </div>
         )}
 
-        {/* Section 5: 6-Dimension Wellness Plan */}
+        {/* Section 5: 6-D Wellness */}
         {(() => {
-          const wellness = getWellnessPlan(wuxing.weakest);
-          if (!wellness) return null;
+          const w = getWellnessPlan(wuxing.weakest);
+          if (!w) return null;
           return (
-            <div style={{ marginBottom: '12px' }}>
-              <div className="card" style={{ textAlign: 'center', marginBottom: '8px' }}>
-                <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', letterSpacing: '1px', marginBottom: '2px' }}>
-                  6-Dimension Wellness Plan
-                </p>
-                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                  Targeted for {getElementNames[wuxing.weakest] || wuxing.weakest} Enhancement
-                </p>
+            <div className="mb-3">
+              <div className="bg-white rounded-xl border border-[#EAE5DE] p-3 mb-2 text-center">
+                <p className="text-xs text-[#8A8A8A] tracking-wide">6-Dimension Wellness Plan</p>
+                <p className="text-sm font-semibold text-[#1A1A1A] mt-0.5">For {ELEMENT_NAME[wuxing.weakest]} Enhancement</p>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div className="grid grid-cols-2 gap-2">
                 {[
-                  { icon: '🎨', label: 'Wear', value: wellness.color },
-                  { icon: '🧭', label: 'Direction', value: wellness.direction },
-                  { icon: '🥗', label: 'Eat', value: wellness.food },
-                  { icon: '🏃', label: 'Exercise', value: wellness.exercise },
-                  { icon: '💆', label: 'Acupoint', value: wellness.acupoint },
-                  { icon: '😴', label: 'Sleep', value: wellness.sleep },
+                  { icon: '🎨', label: 'Color', value: w.color },
+                  { icon: '🧭', label: 'Direction', value: w.direction },
+                  { icon: '🥗', label: 'Diet', value: w.food },
+                  { icon: '🏃', label: 'Exercise', value: w.exercise },
+                  { icon: '💆', label: 'Acupoint', value: w.acupoint },
+                  { icon: '😴', label: 'Sleep', value: w.sleep },
                 ].map((item) => (
-                  <div key={item.label} className="card" style={{ padding: '14px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', marginBottom: '4px' }}>{item.icon}</div>
-                    <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', letterSpacing: '1px', marginBottom: '2px' }}>{item.label}</p>
-                    <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', lineHeight: 1.4, fontWeight: 500 }}>{item.value}</p>
+                  <div key={item.label} className="bg-white rounded-xl border border-[#EAE5DE] p-3 text-center">
+                    <div className="text-lg mb-1">{item.icon}</div>
+                    <p className="text-[10px] text-[#8A8A8A] tracking-wide mb-0.5">{item.label}</p>
+                    <p className="text-xs text-[#1A1A1A] leading-relaxed font-medium">{item.value}</p>
                   </div>
                 ))}
               </div>
-
-              <div className="card" style={{ marginTop: '8px', borderLeft: '3px solid var(--color-gold)' }}>
-                <p style={{ fontSize: '12px', color: 'var(--color-gold)', fontWeight: 600, marginBottom: '4px' }}>📜 Classical Wisdom</p>
-                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.6, fontStyle: 'italic' }}>{wellness.classic}</p>
-                <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', marginTop: '8px', lineHeight: 1.5 }}>{wellness.emotion}</p>
+              <div className="bg-white rounded-xl border border-[#EAE5DE] p-4 mt-2 border-l-[3px] border-[#C9A96E]">
+                <p className="text-xs text-[#C9A96E] font-semibold mb-1">📜 Classical Wisdom</p>
+                <p className="text-sm text-[#4A4A4A] italic leading-relaxed">{w.classic}</p>
+                <p className="text-sm text-[#1A1A1A] mt-2 leading-relaxed">{w.emotion}</p>
               </div>
             </div>
           );
@@ -283,160 +370,83 @@ function ReportContent() {
 
         {/* Section 6: Daily Practice */}
         {(() => {
-          const wellness = getWellnessPlan(wuxing.weakest);
-          if (!wellness) return null;
+          const w = getWellnessPlan(wuxing.weakest);
+          if (!w) return null;
           return (
-            <div style={{ marginBottom: '12px' }}>
-              <div className="card" style={{ textAlign: 'center', marginBottom: '8px' }}>
-                <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', letterSpacing: '1px', marginBottom: '2px' }}>
-                  Today&apos;s Practice
-                </p>
-                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                  4 things you can do today
-                </p>
+            <div className="mb-3">
+              <div className="bg-white rounded-xl border border-[#EAE5DE] p-3 mb-2 text-center">
+                <p className="text-xs text-[#8A8A8A] tracking-wide">Today&apos;s Practice</p>
+                <p className="text-sm font-semibold text-[#1A1A1A] mt-0.5">4 things you can do today</p>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div className="card" style={{ borderLeft: '3px solid var(--color-success)', padding: '14px' }}>
-                  <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '4px' }}>✅ Wear</p>
-                  <p style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{wellness.color}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white rounded-xl border-l-[3px] border-[#4A7C49] p-3">
+                  <p className="text-[10px] text-[#4A7C49] font-semibold mb-0.5">✅ Wear</p>
+                  <p className="text-xs text-[#1A1A1A]">{w.color}</p>
                 </div>
-                <div className="card" style={{ borderLeft: '3px solid var(--color-success)', padding: '14px' }}>
-                  <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '4px' }}>✅ Face</p>
-                  <p style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>Face {wellness.direction}</p>
+                <div className="bg-white rounded-xl border-l-[3px] border-[#4A7C49] p-3">
+                  <p className="text-[10px] text-[#4A7C49] font-semibold mb-0.5">✅ Face</p>
+                  <p className="text-xs text-[#1A1A1A]">{w.direction}</p>
                 </div>
-                <div className="card" style={{ borderLeft: '3px solid var(--color-success)', padding: '14px' }}>
-                  <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '4px' }}>✅ Eat</p>
-                  <p style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{wellness.food.split(',')[0]}</p>
+                <div className="bg-white rounded-xl border-l-[3px] border-[#4A7C49] p-3">
+                  <p className="text-[10px] text-[#4A7C49] font-semibold mb-0.5">✅ Eat</p>
+                  <p className="text-xs text-[#1A1A1A]">{w.food.split(',')[0]}</p>
                 </div>
-                <div className="card" style={{ borderLeft: '3px solid var(--color-success)', padding: '14px' }}>
-                  <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '4px' }}>✅ Move</p>
-                  <p style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{wellness.exercise.split(',')[0]}</p>
+                <div className="bg-white rounded-xl border-l-[3px] border-[#4A7C49] p-3">
+                  <p className="text-[10px] text-[#4A7C49] font-semibold mb-0.5">✅ Move</p>
+                  <p className="text-xs text-[#1A1A1A]">{w.exercise.split(',')[0]}</p>
                 </div>
               </div>
             </div>
           );
         })()}
 
-        {/* Section 7: Waitlist */}
-        <div className="card" style={{ marginBottom: '12px', textAlign: 'center', padding: '24px 20px' }}>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
-            This is your free report preview
-          </p>
-          <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', fontWeight: 600, marginBottom: '16px' }}>
-            Deep analysis launching soon. Join the waitlist.
-          </p>
-          <button
-            onClick={() => setShowPayModal(true)}
-            className="btn-primary"
-            style={{ width: '100%' }}
-          >
-            Join the Waitlist
+        {/* Share + Waitlist */}
+        <div className="flex gap-2 mb-3">
+          <button onClick={handleShare} disabled={sharing}
+            className="flex-1 py-3 bg-[#4A7C49] text-white rounded-full text-xs font-medium hover:bg-[#3D6A3C] transition disabled:opacity-50">
+            {sharing ? 'Generating...' : shared ? '✓ Saved' : '📸 Share Report'}
           </button>
-          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '8px' }}>
-            We&apos;ll notify you when it launches
-          </p>
+          <button onClick={() => setShowWaitlist(true)}
+            className="flex-1 py-3 bg-white border border-[#EAE5DE] text-[#1A1A1A] rounded-full text-xs font-medium hover:border-[#4A7C49] transition">
+            🔓 Deep Analysis
+          </button>
         </div>
 
-        {/* Footer */}
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-            LingShu · Your energy pattern already knows the answer
-          </p>
+        <div className="text-center pt-2">
+          <p className="text-[10px] text-[#B0B0B0]">LingShu · Your energy pattern already knows the answer</p>
         </div>
       </div>
 
       {/* Waitlist Modal */}
-      {showPayModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px',
-          }}
-          onClick={() => { setShowPayModal(false); setPayStatus('idle'); setPayEmail(''); }}
-        >
-          <div
-            style={{
-              background: 'var(--color-bg-card)',
-              borderRadius: '16px',
-              padding: '28px 24px',
-              maxWidth: '340px',
-              width: '100%',
-              textAlign: 'center',
-              border: '1px solid var(--color-border)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {payStatus === 'done' ? (
+      {showWaitlist && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-5"
+          onClick={() => { setShowWaitlist(false); setWaitlistStatus('idle'); }}>
+          <div className="bg-white rounded-2xl p-7 max-w-sm w-full text-center border border-[#EAE5DE]"
+            onClick={(e) => e.stopPropagation()}>
+            {waitlistStatus === 'done' ? (
               <>
-                <p style={{ fontSize: '36px', marginBottom: '12px' }}>📩</p>
-                <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                  You&apos;re on the list
-                </p>
-                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '24px' }}>
-                  We&apos;ll notify you as soon as it launches.
-                </p>
-                <button
-                  onClick={() => { setShowPayModal(false); setPayStatus('idle'); setPayEmail(''); }}
-                  className="btn-primary"
-                  style={{ width: '100%' }}
-                >
-                  Got it
-                </button>
+                <p className="text-3xl mb-3">📩</p>
+                <p className="text-base font-semibold text-[#1A1A1A] mb-1">You&apos;re on the list</p>
+                <p className="text-sm text-[#6B6B6B] mb-6">We&apos;ll notify you when deep analysis launches.</p>
+                <button onClick={() => { setShowWaitlist(false); setWaitlistStatus('idle'); }}
+                  className="w-full py-3 bg-[#4A7C49] text-white rounded-full text-sm font-medium">Got it</button>
               </>
             ) : (
               <>
-                <p style={{ fontSize: '32px', marginBottom: '12px' }}>🔓</p>
-                <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                  Deep Analysis Coming Soon
-                </p>
-                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
-                  Leave your email and we&apos;ll notify you.
-                </p>
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={payEmail}
-                  onChange={(e) => setPayEmail(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    fontSize: '15px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--color-border)',
-                    background: 'var(--color-bg)',
-                    color: 'var(--color-text-primary)',
-                    outline: 'none',
-                    marginBottom: '12px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-                <button
-                  onClick={async () => {
-                    if (!payEmail || !payEmail.includes('@')) return;
-                    setPayStatus('loading');
-                    try {
-                      await fetch('/api/waitlist', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: payEmail }),
-                      });
-                      setPayStatus('done');
-                    } catch {
-                      setPayStatus('idle');
-                    }
-                  }}
-                  className="btn-primary"
-                  style={{ width: '100%' }}
-                  disabled={payStatus === 'loading'}
-                >
-                  {payStatus === 'loading' ? 'Submitting...' : 'Notify me ✓'}
+                <p className="text-3xl mb-3">🔓</p>
+                <p className="text-base font-semibold text-[#1A1A1A] mb-1">Deep Analysis Coming Soon</p>
+                <p className="text-sm text-[#6B6B6B] mb-5">Leave your email and we&apos;ll notify you.</p>
+                <input type="email" placeholder="your@email.com" value={waitlistEmail}
+                  onChange={(e) => setWaitlistEmail(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-[#EAE5DE] text-sm outline-none focus:border-[#4A7C49] mb-3 box-border" />
+                <button onClick={async () => {
+                  if (!waitlistEmail.includes('@')) return;
+                  setWaitlistStatus('loading');
+                  try { await fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: waitlistEmail }) }); } catch { /* ignore */ }
+                  setWaitlistStatus('done');
+                }} disabled={waitlistStatus === 'loading'}
+                  className="w-full py-3 bg-[#4A7C49] text-white rounded-full text-sm font-medium disabled:opacity-50">
+                  {waitlistStatus === 'loading' ? 'Submitting...' : 'Notify me ✓'}
                 </button>
               </>
             )}
@@ -444,17 +454,5 @@ function ReportContent() {
         </div>
       )}
     </main>
-  );
-}
-
-export default function ReportPage() {
-  return (
-    <Suspense fallback={
-      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--color-text-muted)' }}>Loading...</p>
-      </main>
-    }>
-      <ReportContent />
-    </Suspense>
   );
 }
