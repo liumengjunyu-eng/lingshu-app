@@ -1,71 +1,70 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { useTranslations } from '@/lib/i18n/context';
+import { useRouter } from 'next/navigation';
 import { EmotionType } from '@/lib/inference/types';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 type PrimaryIssue = 'sleep' | 'anxiety' | 'direction' | 'relationship' | 'energy';
 type FollowUpChoice = 'A' | 'B' | 'C' | 'D';
 
-const ISSUE_OPTIONS: { value: PrimaryIssue; emoji: string }[] = [
-  { value: 'sleep', emoji: '😴' },
-  { value: 'anxiety', emoji: '😰' },
-  { value: 'direction', emoji: '🧭' },
-  { value: 'relationship', emoji: '💔' },
-  { value: 'energy', emoji: '⚡' },
+const ISSUE_OPTIONS: { value: PrimaryIssue; emoji: string; label: string }[] = [
+  { value: 'sleep', emoji: '😴', label: "I haven't been sleeping well" },
+  { value: 'anxiety', emoji: '😰', label: 'I feel anxious and drained' },
+  { value: 'direction', emoji: '🧭', label: 'I feel lost' },
+  { value: 'relationship', emoji: '💔', label: 'Relationships have been difficult' },
+  { value: 'energy', emoji: '⚡', label: "My energy keeps dropping" },
 ];
 
-const FOLLOW_UP_MAP: Record<PrimaryIssue, { value: FollowUpChoice; emoji: string }[]> = {
+const FOLLOW_UP_MAP: Record<PrimaryIssue, { value: FollowUpChoice; emoji: string; label: string }[]> = {
   sleep: [
-    { value: 'A', emoji: '🤔' },
-    { value: 'B', emoji: '🎯' },
-    { value: 'C', emoji: '😤' },
-    { value: 'D', emoji: '😰' },
+    { value: 'A', emoji: '🤔', label: "Can't stop thinking" },
+    { value: 'B', emoji: '🎯', label: 'Waking up at night' },
+    { value: 'C', emoji: '😤', label: 'Waking too early' },
+    { value: 'D', emoji: '😰', label: "Can't fall asleep" },
   ],
   anxiety: [
-    { value: 'A', emoji: '🔄' },
-    { value: 'B', emoji: '😨' },
-    { value: 'C', emoji: '💓' },
-    { value: 'D', emoji: '🙈' },
+    { value: 'A', emoji: '🔄', label: 'Replaying the same worry' },
+    { value: 'B', emoji: '😨', label: 'Vague sense of fear' },
+    { value: 'C', emoji: '💓', label: 'Heart racing' },
+    { value: 'D', emoji: '🙈', label: 'Want to avoid everything' },
   ],
   direction: [
-    { value: 'A', emoji: '🤯' },
-    { value: 'B', emoji: '😟' },
-    { value: 'C', emoji: '⚡' },
-    { value: 'D', emoji: '📋' },
+    { value: 'A', emoji: '🤯', label: 'Too much input' },
+    { value: 'B', emoji: '😟', label: 'Overthinking, not acting' },
+    { value: 'C', emoji: '⚡', label: 'Acting, then regretting' },
+    { value: 'D', emoji: '📋', label: "Lists I don't follow" },
   ],
   relationship: [
-    { value: 'A', emoji: '🤲' },
-    { value: 'B', emoji: '🤐' },
-    { value: 'C', emoji: '💥' },
-    { value: 'D', emoji: '🧊' },
+    { value: 'A', emoji: '🤲', label: 'Over-giving' },
+    { value: 'B', emoji: '🤐', label: 'Going silent' },
+    { value: 'C', emoji: '💥', label: 'Emotional outbursts' },
+    { value: 'D', emoji: '🧊', label: 'Going cold' },
   ],
   energy: [
-    { value: 'A', emoji: '🏋️' },
-    { value: 'B', emoji: '😫' },
-    { value: 'C', emoji: '😤' },
-    { value: 'D', emoji: '🛌' },
+    { value: 'A', emoji: '🏋️', label: 'Tired after exercise' },
+    { value: 'B', emoji: '😫', label: "Body feels heavy" },
+    { value: 'C', emoji: '😤', label: 'Irritable' },
+    { value: 'D', emoji: '🛌', label: 'Just want to lie down' },
   ],
 };
 
-const EMOTION_OPTIONS: { value: EmotionType; emoji: string }[] = [
-  { value: 'exhausted', emoji: '😩' },
-  { value: 'uncomfortable', emoji: '😐' },
-  { value: 'no_motivation', emoji: '😑' },
-  { value: 'no_interest', emoji: '😕' },
-  { value: 'never_rested', emoji: '😪' },
+const EMOTION_OPTIONS: { value: EmotionType; emoji: string; label: string }[] = [
+  { value: 'exhausted', emoji: '😩', label: 'Constant exhaustion' },
+  { value: 'uncomfortable', emoji: '😐', label: "Off, but I can't name it" },
+  { value: 'no_motivation', emoji: '😑', label: 'No drive toward the future' },
+  { value: 'no_interest', emoji: '😕', label: "Nothing feels interesting" },
+  { value: 'never_rested', emoji: '😪', label: 'Always want rest, never rested' },
 ];
 
-const PROGRESS_STEPS = ['progress.0', 'progress.1', 'progress.2', 'progress.3'];
+const PROGRESS_STEPS = [
+  'Analyzing your recovery state...',
+  'Identifying your behavior pattern...',
+  'Matching your archetype...',
+  'Generating your observations...',
+];
 
 export default function DiagnosePage() {
   const router = useRouter();
-  const params = useParams<{ locale: string }>();
-  const locale = params?.locale || 'zh';
-  const { t } = useTranslations('diagnose');
-  const CJK_LOCALES = new Set(['zh', 'zh-TW']);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [primaryIssue, setPrimaryIssue] = useState<PrimaryIssue | null>(null);
@@ -103,15 +102,14 @@ export default function DiagnosePage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '诊断失败');
+      if (!res.ok) throw new Error(data.error || 'Diagnosis failed');
 
       const result = { ...data.data, emotion: emo };
       localStorage.setItem('diagnosis_result', JSON.stringify(result));
-      const nextPage = CJK_LOCALES.has(locale) ? `/${locale}/result` : '/result';
-      router.push(nextPage);
+      router.push('/result');
     } catch (error) {
-      console.error('[诊断错误]', error);
-      alert('诊断失败，请重试');
+      console.error('[Diagnosis error]', error);
+      alert('Diagnosis failed. Please try again.');
       setLoading(false);
     }
   };
@@ -134,7 +132,7 @@ export default function DiagnosePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               }}>
                 <span style={{ display: 'inline-block', width: '16px' }}>{index <= progressStep ? '✓' : '○'}</span>
-                <span>{t(label)}</span>
+                <span>{label}</span>
               </div>
             ))}
           </div>
@@ -145,12 +143,9 @@ export default function DiagnosePage() {
 
   return (
     <main className="relative" style={{ minHeight: '100vh', background: 'var(--color-bg)', padding: '24px 20px' }}>
-      <div className="absolute top-6 right-6 z-50">
-        <LanguageSwitcher />
-      </div>
       <div style={{ minHeight: 'calc(100vh - 48px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ maxWidth: '420px', width: '100%' }}>
-        {/* Progress */}
+        {/* Progress dots */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginBottom: '28px' }}>
           {[1, 2, 3].map(s => (
             <div key={s} style={{
@@ -161,11 +156,11 @@ export default function DiagnosePage() {
           ))}
         </div>
 
-        {/* Step 1: 主问题 */}
+        {/* Step 1: Primary issue */}
         {step === 1 && (
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--color-text-primary)', textAlign: 'center', marginBottom: '24px' }}>
-              {t('step1')}
+              What&apos;s been bothering you lately?
             </h1>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {ISSUE_OPTIONS.map((option) => (
@@ -179,14 +174,14 @@ export default function DiagnosePage() {
                   }}
                 >
                   <span style={{ fontSize: '20px' }}>{option.emoji}</span>
-                  {t(`options.${option.value}`)}
+                  {option.label}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Step 2: 细分 */}
+        {/* Step 2: Follow-up */}
         {step === 2 && primaryIssue && (
           <div>
             <button onClick={handleBack} style={{
@@ -194,10 +189,10 @@ export default function DiagnosePage() {
               fontSize: '14px', cursor: 'pointer', padding: '0 0 16px 0',
               display: 'flex', alignItems: 'center', gap: '4px',
             }}>
-              ← 返回
+              ← Back
             </button>
             <h1 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)', textAlign: 'center', marginBottom: '24px' }}>
-              {t('step2')}
+              When sleep is off, which fits you more:
             </h1>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {FOLLOW_UP_MAP[primaryIssue].map((option) => (
@@ -212,14 +207,14 @@ export default function DiagnosePage() {
                 >
                   <span style={{ fontWeight: 600, color: 'var(--color-text-muted)', minWidth: '24px' }}>{option.value}</span>
                   <span style={{ fontSize: '18px' }}>{option.emoji}</span>
-                  <span style={{ fontSize: '15px', color: 'var(--color-text-primary)' }}>{t(`followup.${primaryIssue}.${option.value}`)}</span>
+                  <span style={{ fontSize: '15px', color: 'var(--color-text-primary)' }}>{option.label}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Step 3: 情绪选择 */}
+        {/* Step 3: Emotion */}
         {step === 3 && (
           <div>
             <button onClick={handleBack} style={{
@@ -227,13 +222,13 @@ export default function DiagnosePage() {
               fontSize: '14px', cursor: 'pointer', padding: '0 0 16px 0',
               display: 'flex', alignItems: 'center', gap: '4px',
             }}>
-              ← 返回
+              ← Back
             </button>
             <h1 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)', textAlign: 'center', marginBottom: '8px' }}>
-              {t('step3')}
+              What emotion have you been feeling most recently?
             </h1>
             <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', textAlign: 'center', marginBottom: '24px' }}>
-              {t('emotionHint')}
+              Pick the closest one. There&apos;s no right or wrong.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {EMOTION_OPTIONS.map((opt) => (
@@ -248,7 +243,7 @@ export default function DiagnosePage() {
                 >
                   <span style={{ fontSize: '24px' }}>{opt.emoji}</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontWeight: 500 }}>{t(`emotion.${opt.value}`)}</span>
+                    <span style={{ fontWeight: 500 }}>{opt.label}</span>
                   </div>
                 </button>
               ))}
