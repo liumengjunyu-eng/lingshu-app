@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "灵枢 LingShu - Your Energy Blueprint",
+  title: "灵枢 LingShu - 你的能量状态诊断",
   description:
-    "Discover your Five-Element energy pattern. Personalized wellness plan based on BaZi and Traditional Chinese Medicine.",
+    "三个问题，了解你的能量状态。免费、匿名、30 秒完成。",
 };
 
 export default function RootLayout({
