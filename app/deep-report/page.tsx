@@ -8,10 +8,12 @@ import { runDecisionEngine, type DecisionDomain } from '@/lib/symbol/v3/decision
 import { createSnapshot, saveSnapshot, getMemory, analyzeEvolution } from '@/lib/symbol/v3/symbolMemory';
 import { captureSignal } from '@/lib/symbol/v3/userSignals';
 import { loadDiagnoseResult, mapToHumanInput, type DiagnoseResult } from '@/lib/symbol/v3/mapper';
+import { calculateBazi, type BaziResult } from '@/lib/inference/bazi';
 import type { SymbolOutput } from '@/lib/symbol/types';
 import html2canvas from 'html2canvas';
 
 type LoadState = 'loading' | 'ready' | 'error';
+type ReportMode = 'psychological' | 'full';
 
 // Tiny session ID - client only
 function sessionId(): string {
@@ -29,6 +31,7 @@ function sessionId(): string {
 // ---- Color scheme ----
 const ELEM_COLORS: Record<string, string> = { wood: '#4A7C59', fire: '#C84B4B', earth: '#B8875A', metal: '#7A8B99', water: '#4B7B9E' };
 const ELEM_LABEL: Record<string, string> = { wood: 'Wood', fire: 'Fire', earth: 'Earth', metal: 'Metal', water: 'Water' };
+const ELEM_CN: Record<string, string> = { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' };
 
 function Bar({ label, value, color, max = 100 }: { label: string; value: number; color: string; max?: number }) {
   const pct = Math.min(100, Math.round((value / max) * 100));
@@ -75,12 +78,175 @@ function Divider() {
 }
 
 // ============================================================
+// Birth Info Form Component
+// ============================================================
+function BirthInfoForm({ onSubmit, loading }: { onSubmit: (data: BirthFormData) => void; loading: boolean }) {
+  const [form, setForm] = useState<BirthFormData>({
+    name: '',
+    year: '',
+    month: '',
+    day: '',
+    hour: '',
+    city: '',
+    gender: 'male',
+    bloodType: '',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div>
+        <label style={{ display: 'block', fontSize: '13px', color: '#8B8B8B', marginBottom: '6px' }}>Name (optional)</label>
+        <input
+          type="text"
+          value={form.name}
+          onChange={e => setForm({ ...form, name: e.target.value })}
+          placeholder="Your name"
+          style={{ width: '100%', padding: '12px 14px', background: '#F0EDE6', border: '1px solid #D8D2C5', borderRadius: '8px', fontSize: '14px', color: '#2C2C2C', outline: 'none' }}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', color: '#8B8B8B', marginBottom: '6px' }}>Year *</label>
+          <input
+            type="number"
+            required
+            value={form.year}
+            onChange={e => setForm({ ...form, year: e.target.value })}
+            placeholder="1990"
+            min="1900"
+            max="2100"
+            style={{ width: '100%', padding: '12px 14px', background: '#F0EDE6', border: '1px solid #D8D2C5', borderRadius: '8px', fontSize: '14px', color: '#2C2C2C', outline: 'none' }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', color: '#8B8B8B', marginBottom: '6px' }}>Month *</label>
+          <input
+            type="number"
+            required
+            value={form.month}
+            onChange={e => setForm({ ...form, month: e.target.value })}
+            placeholder="1-12"
+            min="1"
+            max="12"
+            style={{ width: '100%', padding: '12px 14px', background: '#F0EDE6', border: '1px solid #D8D2C5', borderRadius: '8px', fontSize: '14px', color: '#2C2C2C', outline: 'none' }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', color: '#8B8B8B', marginBottom: '6px' }}>Day *</label>
+          <input
+            type="number"
+            required
+            value={form.day}
+            onChange={e => setForm({ ...form, day: e.target.value })}
+            placeholder="1-31"
+            min="1"
+            max="31"
+            style={{ width: '100%', padding: '12px 14px', background: '#F0EDE6', border: '1px solid #D8D2C5', borderRadius: '8px', fontSize: '14px', color: '#2C2C2C', outline: 'none' }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', color: '#8B8B8B', marginBottom: '6px' }}>Hour (0-23) *</label>
+          <input
+            type="number"
+            required
+            value={form.hour}
+            onChange={e => setForm({ ...form, hour: e.target.value })}
+            placeholder="0-23"
+            min="0"
+            max="23"
+            style={{ width: '100%', padding: '12px 14px', background: '#F0EDE6', border: '1px solid #D8D2C5', borderRadius: '8px', fontSize: '14px', color: '#2C2C2C', outline: 'none' }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', color: '#8B8B8B', marginBottom: '6px' }}>City</label>
+          <input
+            type="text"
+            value={form.city}
+            onChange={e => setForm({ ...form, city: e.target.value })}
+            placeholder="Birth city"
+            style={{ width: '100%', padding: '12px 14px', background: '#F0EDE6', border: '1px solid #D8D2C5', borderRadius: '8px', fontSize: '14px', color: '#2C2C2C', outline: 'none' }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', color: '#8B8B8B', marginBottom: '6px' }}>Gender *</label>
+          <select
+            value={form.gender}
+            onChange={e => setForm({ ...form, gender: e.target.value as 'male' | 'female' })}
+            style={{ width: '100%', padding: '12px 14px', background: '#F0EDE6', border: '1px solid #D8D2C5', borderRadius: '8px', fontSize: '14px', color: '#2C2C2C', outline: 'none' }}
+          >
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', color: '#8B8B8B', marginBottom: '6px' }}>Blood Type</label>
+          <select
+            value={form.bloodType}
+            onChange={e => setForm({ ...form, bloodType: e.target.value })}
+            style={{ width: '100%', padding: '12px 14px', background: '#F0EDE6', border: '1px solid #D8D2C5', borderRadius: '8px', fontSize: '14px', color: '#2C2C2C', outline: 'none' }}
+          >
+            <option value="">Select</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="AB">AB</option>
+            <option value="O">O</option>
+          </select>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        style={{
+          marginTop: '8px',
+          padding: '14px 24px',
+          background: loading ? '#5C5C5C' : '#2C2C2C',
+          color: '#F5F0E8',
+          border: 'none',
+          borderRadius: '10px',
+          fontSize: '15px',
+          fontWeight: 500,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'all 0.2s',
+        }}
+      >
+        {loading ? 'Generating...' : 'Generate Full Report'}
+      </button>
+    </form>
+  );
+}
+
+interface BirthFormData {
+  name: string;
+  year: string;
+  month: string;
+  day: string;
+  hour: string;
+  city: string;
+  gender: 'male' | 'female';
+  bloodType: string;
+}
+
+// ============================================================
 // Main Page
 // ============================================================
 
 export default function DeepReportPage() {
   const router = useRouter();
   const [state, setState] = useState<LoadState>('loading');
+  const [mode, setMode] = useState<ReportMode>('psychological');
   const [symbol, setSymbol] = useState<SymbolOutput | null>(null);
   const [report, setReport] = useState<any>(null);
   const [diagnose, setDiagnose] = useState<DiagnoseResult | null>(null);
@@ -88,6 +254,8 @@ export default function DeepReportPage() {
   const [domainIndex, setDomainIndex] = useState(0);
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
+  const [generatingFull, setGeneratingFull] = useState(false);
+  const [bazi, setBazi] = useState<BaziResult | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [sid, setSid] = useState<string>('');
 
@@ -100,7 +268,6 @@ export default function DeepReportPage() {
   ];
 
   useEffect(() => {
-    // Initialize session ID on client only
     const id = sessionId();
     setSid(id);
     captureSignal(id, 'result_view');
@@ -108,38 +275,55 @@ export default function DeepReportPage() {
     try {
       const dr = loadDiagnoseResult();
       if (!dr) {
-        setState('error');
+        // No diagnosis result - show form directly for full report
+        setState('ready');
+        setMode('psychological');
         return;
       }
       setDiagnose(dr);
 
-      // Map to V2 input & run engine
+      // Generate psychological report from diagnosis
       const input = mapToHumanInput(dr);
       const sym = runSymbolEngine(input);
       setSymbol(sym);
 
-      // Generate deep report
       const snap = createSnapshot(sym);
       const mem = getMemory(id);
       const rep = generateDeepReport(sym, snap, mem);
       setReport(rep);
 
-      // Evolution
       const evo = mem.length >= 2 ? analyzeEvolution(mem) : null;
       setEvolution(evo);
 
-      // Save memory
       saveSnapshot(id, snap);
-
       captureSignal(id, 'report_generate');
 
-      // Small delay for animation
       setTimeout(() => setState('ready'), 300);
     } catch (e) {
       console.error('[DeepReport]', e);
       setState('error');
     }
   }, []);
+
+  const handleGenerateFull = async (formData: BirthFormData) => {
+    setGeneratingFull(true);
+    try {
+      const year = parseInt(formData.year);
+      const month = parseInt(formData.month);
+      const day = parseInt(formData.day);
+      const hour = parseInt(formData.hour);
+
+      const baziResult = calculateBazi(year, month, day, hour, formData.gender);
+      setBazi(baziResult);
+      setMode('full');
+      captureSignal(sid, 'full_report_generate');
+    } catch (e) {
+      console.error('[Bazi calculation error]', e);
+      alert('Failed to calculate Bazi. Please check your birth information.');
+    } finally {
+      setGeneratingFull(false);
+    }
+  };
 
   const handleShare = async () => {
     if (!cardRef.current) return;
@@ -178,16 +362,35 @@ export default function DeepReportPage() {
     );
   }
 
+  // No diagnosis result - show birth form directly
+  if (state === 'ready' && !symbol && !diagnose) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#F5F0E8', padding: '24px 20px' }}>
+        <div style={{ maxWidth: '480px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ fontSize: '13px', color: '#B8B2A5', letterSpacing: '0.5px', marginBottom: '8px' }}>LINGSHU</div>
+            <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#2C2C2C', marginBottom: '8px' }}>Complete Your Profile</h1>
+            <p style={{ fontSize: '14px', color: '#8B8B8B' }}>Enter your birth information to generate your full symbolic report</p>
+          </div>
+
+          <div style={{ background: '#F0EDE6', borderRadius: '16px', padding: '24px' }}>
+            <BirthInfoForm onSubmit={handleGenerateFull} loading={generatingFull} />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (state === 'error' || !symbol || !report) {
     return (
       <main style={{ minHeight: '100vh', background: '#F5F0E8', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div style={{ textAlign: 'center', maxWidth: '360px' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🌀</div>
-          <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#3C3C3C', marginBottom: '8px' }}>No diagnosis found</h1>
-          <p style={{ fontSize: '14px', color: '#8B8B8B', marginBottom: '24px' }}>Complete a quick assessment first to unlock your deep report.</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#3C3C3C', marginBottom: '8px' }}>Something went wrong</h1>
+          <p style={{ fontSize: '14px', color: '#8B8B8B', marginBottom: '24px' }}>Unable to load your report. Please try again.</p>
           <button onClick={() => router.push('/')}
             style={{ padding: '12px 28px', background: '#2C2C2C', color: '#F5F0E8', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer' }}>
-            Start Assessment
+            Start Over
           </button>
         </div>
       </main>
@@ -198,14 +401,12 @@ export default function DeepReportPage() {
   const fatigueScore = Math.round(100 - (f.water * 0.4 + f.earth * 0.2));
   const decisionCtx = DOMAINS.map(d => ({ domain: d.key, result: runDecisionEngine({ domain: d.key as DecisionDomain, userId: sid, currentSymbol: symbol }) }));
 
-  // Risk projection
   const risk7 = Math.min(98, Math.round(fatigueScore * 0.6 + (100 - f.water) * 0.3));
   const risk30 = Math.min(98, Math.round(fatigueScore * 0.5 + (100 - f.water) * 0.4));
   const riskExhaust = Math.min(98, Math.round(fatigueScore * 0.7 + (100 - f.water) * 0.2));
 
   return (
     <main style={{ minHeight: '100vh', background: '#F5F0E8', padding: '0 0 60px' }}>
-      {/* Header */}
       <div style={{ padding: '24px 20px 0', maxWidth: '520px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <span style={{ fontSize: '13px', color: '#B8B2A5', letterSpacing: '0.5px' }}>LINGSHU</span>
@@ -216,9 +417,20 @@ export default function DeepReportPage() {
           </div>
         </div>
 
+        {/* Mode indicator */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+          <div style={{ flex: 1, padding: '10px', background: mode === 'psychological' ? '#2C2C2C' : '#F0EDE6', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ fontSize: '12px', color: mode === 'psychological' ? '#B8B2A5' : '#8B8B8B' }}>STEP 1</div>
+            <div style={{ fontSize: '14px', fontWeight: 500, color: mode === 'psychological' ? '#F5F0E8' : '#5C5C5C' }}>Psychological</div>
+          </div>
+          <div style={{ flex: 1, padding: '10px', background: mode === 'full' ? '#2C2C2C' : '#F0EDE6', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ fontSize: '12px', color: mode === 'full' ? '#B8B2A5' : '#8B8B8B' }}>STEP 2</div>
+            <div style={{ fontSize: '14px', fontWeight: 500, color: mode === 'full' ? '#F5F0E8' : '#5C5C5C' }}>Full Report</div>
+          </div>
+        </div>
+
         {/* === PART 1: Current State === */}
-        <Section title="Your Current State" subtitle="Based on your 5 answers">
-          {/* Recovery Debt */}
+        <Section title="Your Current State" subtitle={mode === 'psychological' ? "Based on your 5 answers" : "Psychological + Bazi combined analysis"}>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{ fontSize: '13px', color: '#8B8B8B', marginBottom: '8px' }}>Recovery Debt</div>
             <div style={{ fontSize: '56px', fontWeight: 700, color: fatigueScore > 60 ? '#C84B4B' : fatigueScore > 40 ? '#B8875A' : '#4A7C59', lineHeight: 1 }}>
@@ -229,7 +441,6 @@ export default function DeepReportPage() {
             </div>
           </div>
 
-          {/* Main imbalance */}
           <div style={{ background: '#F0EDE6', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
             <div style={{ fontSize: '13px', color: '#8B8B8B', marginBottom: '12px' }}>Main Imbalance</div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -248,7 +459,6 @@ export default function DeepReportPage() {
             </div>
           </div>
 
-          {/* Mirror line */}
           <p style={{ fontFamily: "'Noto Serif SC', Georgia, serif", fontSize: '16px', fontStyle: 'italic', color: '#5C5C5C', textAlign: 'center', lineHeight: 1.6 }}>
             &ldquo;{report.hook?.text || diagnose?.insights?.[0] || 'Your energy pattern reveals what words cannot express.'}&rdquo;
           </p>
@@ -256,16 +466,90 @@ export default function DeepReportPage() {
 
         <Divider />
 
+        {/* === Birth Info Form (if not full mode) === */}
+        {mode === 'psychological' && (
+          <>
+            <Section title="Unlock Your Full Report" subtitle="Add your birth information for complete Bazi analysis">
+              <div style={{ background: '#F0EDE6', borderRadius: '16px', padding: '24px' }}>
+                <BirthInfoForm onSubmit={handleGenerateFull} loading={generatingFull} />
+              </div>
+            </Section>
+            <Divider />
+          </>
+        )}
+
+        {/* === Bazi Section (if full mode) === */}
+        {mode === 'full' && bazi && (
+          <>
+            <Section title="Your Bazi Profile" subtitle="Eight characters of destiny">
+              <div style={{ background: '#F0EDE6', borderRadius: '12px', padding: '20px' }}>
+                {/* Bazi pillars */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
+                  {[
+                    { label: 'Year', stem: bazi.yearPillar.stem, branch: bazi.yearPillar.branch },
+                    { label: 'Month', stem: bazi.monthPillar.stem, branch: bazi.monthPillar.branch },
+                    { label: 'Day', stem: bazi.dayPillar.stem, branch: bazi.dayPillar.branch },
+                    { label: 'Hour', stem: bazi.hourPillar.stem, branch: bazi.hourPillar.branch },
+                  ].map((p, i) => (
+                    <div key={i} style={{ textAlign: 'center', padding: '12px 8px', background: '#E8E4DD', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '11px', color: '#8B8B8B', marginBottom: '4px' }}>{p.label}</div>
+                      <div style={{ fontSize: '20px', fontWeight: 600, color: '#2C2C2C' }}>{p.stem}{p.branch}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Day master info */}
+                <div style={{ padding: '16px', background: '#E8E4DD', borderRadius: '8px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '4px' }}>DAY MASTER</div>
+                  <div style={{ fontSize: '18px', fontWeight: 600, color: '#2C2C2C', marginBottom: '4px' }}>
+                    {bazi.dayMaster.element} {bazi.dayMaster.yinYang}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#5C5C5C' }}>
+                    {bazi.dayMaster.description}
+                  </div>
+                </div>
+
+                {/* Five elements from Bazi */}
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '8px' }}>FIVE ELEMENTS DISTRIBUTION</div>
+                  {Object.entries(bazi.fiveElements).map(([el, count]) => (
+                    <div key={el} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                      <span style={{ width: '40px', fontSize: '13px', color: '#5C5C5C' }}>{ELEM_LABEL[el]}</span>
+                      <div style={{ flex: 1, height: '8px', background: '#E8E4DD', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.min(100, (count / 3) * 100)}%`, background: ELEM_COLORS[el], borderRadius: '4px' }} />
+                      </div>
+                      <span style={{ width: '20px', fontSize: '13px', color: '#8B8B8B', textAlign: 'right' }}>{count}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Ten gods */}
+                {bazi.tenGods && bazi.tenGods.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '8px' }}>KEY TEN GODS</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {bazi.tenGods.slice(0, 6).map((god, i) => (
+                        <span key={i} style={{ padding: '4px 10px', background: '#E8E4DD', borderRadius: '12px', fontSize: '12px', color: '#5C5C5C' }}>
+                          {god}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Section>
+            <Divider />
+          </>
+        )}
+
         {/* === PART 2: Why You're Like This === */}
-        <Section title="Why You&rsquo;re Like This" subtitle="How the system sees your pattern">
+        <Section title="Why You're Like This" subtitle="How the system sees your pattern">
           <div style={{ background: '#F0EDE6', borderRadius: '12px', padding: '16px' }}>
-            {/* Archetype */}
             <div style={{ marginBottom: '16px', padding: '12px', background: '#E8E4DD', borderRadius: '8px', textAlign: 'center' }}>
               <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '4px' }}>ARCHETYPE</div>
               <div style={{ fontSize: '20px', fontWeight: 700, color: '#2C2C2C' }}>{symbol.persona.primary}</div>
             </div>
 
-            {/* Element bars */}
             {(['wood', 'fire', 'earth', 'metal', 'water'] as const).map(el => (
               <Bar key={el} label={ELEM_LABEL[el]} value={f[el]} color={ELEM_COLORS[el]} />
             ))}
@@ -274,7 +558,6 @@ export default function DeepReportPage() {
               {symbol.persona.description}
             </div>
 
-            {/* Conflict detection from report */}
             {report.sections.filter((s: any) => s.title === 'Cross-System Conflicts').map((s: any, i: number) => (
               <div key={i} style={{ marginTop: '12px', padding: '12px', background: '#E8E4DD', borderRadius: '8px' }}>
                 <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '8px' }}>{s.icon} {s.title}</div>
@@ -308,7 +591,6 @@ export default function DeepReportPage() {
 
         {/* === PART 4: Decision Recommendations === */}
         <Section title="Decision Guide" subtitle="5 areas of life — matched to your system state">
-          {/* Domain tabs */}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
             {DOMAINS.map((d, i) => (
               <button key={d.key} onClick={() => setDomainIndex(i)}
@@ -318,7 +600,6 @@ export default function DeepReportPage() {
             ))}
           </div>
 
-          {/* Domain content */}
           {decisionCtx[domainIndex] && (
             <div style={{ background: '#F0EDE6', borderRadius: '12px', padding: '16px' }}>
               {decisionCtx[domainIndex].result.topPick && (
@@ -403,7 +684,7 @@ export default function DeepReportPage() {
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '12px', background: '#3C3C3C', borderRadius: '8px', fontSize: '14px', color: '#B8B2A5' }}>
-                ✓ You&rsquo;re on the list.
+                ✓ You're on the list.
               </div>
             )}
           </div>
