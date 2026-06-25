@@ -27,7 +27,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
  <div style={{ width: 40, height: 40, borderRadius: 12, background: '#4A7C49', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
- <span style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>灵</span>
+ <span style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>L</span>
  </div>
  <span style={{ fontSize: 18, fontWeight: 600, color: '#1A1A1A' }}>Lingshu</span>
  </div>

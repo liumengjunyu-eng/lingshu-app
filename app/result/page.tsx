@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import { track } from '@/lib/track';
 import { getPersona, getHook } from '@/lib/persona';
@@ -54,19 +55,19 @@ function ResultContent() {
   };
 
   const handleCopy = async () => {
-    const text = `${persona.name}\n\n\u201c${hook.text}\u201d\n\nScore: ${score}/100\n\nFind yours \u2192 lingshu.app`;
+    const text = `${persona.name}\n\n\u201c${hook.text}\u201d\n\nScore: ${score}/100\n\nFind yours \u2192 lingshu-app.vercel.app`;
     await navigator.clipboard.writeText(text);
   };
 
   return (
     <main className="min-h-screen bg-[#FBF9F6] flex flex-col items-center justify-center px-6 py-12">
       <div className="max-w-md w-full space-y-8">
-        {/* 隐藏的分享卡片 */}
+        {/* Hidden share card */}
         <div className="absolute left-[-9999px] top-0">
           <ShareCard ref={cardRef} score={score} type={type} />
         </div>
 
-        {/* 结果显示 */}
+        {/* Result display */}
         <div className="text-center">
           <div className="text-sm text-[#4A7C49] font-medium">{persona.name}</div>
           <div className="text-5xl font-bold text-[#1A1A1A] mt-2">{score}</div>
@@ -75,7 +76,7 @@ function ResultContent() {
           <p className="mt-2 text-[#4A4A4A]">{`\u201c${hook.text}\u201d`}</p>
         </div>
 
-        {/* 分享按钮 */}
+        {/* Share button */}
         <button
           onClick={handleShare}
           disabled={loading}
@@ -84,7 +85,7 @@ function ResultContent() {
           {loading ? 'Generating…' : saved ? '✓ Saved' : '📸 Share my recovery type'}
         </button>
 
-        {/* 复制文案 */}
+        {/* Copy caption */}
         <button
           onClick={handleCopy}
           className="w-full py-3 rounded-xl bg-white border border-[#EAE5DE] text-[#1A1A1A] font-medium hover:border-[#4A7C49] transition"
@@ -98,6 +99,22 @@ function ResultContent() {
         >
           Back to home
         </button>
+
+        {/* Guide to deeper report */}
+        <div className="pt-8 border-t border-[#EAE5DE] text-center">
+          <h3 className="text-xl font-semibold text-[#1A1A1A]">
+            Want to go deeper?
+          </h3>
+          <p className="text-[#6B6B6B] mt-2 text-sm max-w-sm mx-auto leading-relaxed">
+            Your full report includes: Five Elements analysis, TCM body mapping, personalized recovery plan, and more.
+          </p>
+          <Link
+            href="/report"
+            className="inline-block mt-5 px-8 py-3 bg-[#4A7C49] text-white rounded-full text-sm font-medium hover:bg-[#3D6A3C] transition"
+          >
+            Unlock Your Full Report →
+          </Link>
+        </div>
       </div>
     </main>
   );
