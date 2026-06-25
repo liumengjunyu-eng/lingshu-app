@@ -1,0 +1,75 @@
+import { UserScore, RecoveryStateLevel } from './types';
+
+export function calculateState(score: UserScore): RecoveryStateLevel {
+  if (score.fatigue > 75) return 'overloaded';
+  if (score.fatigue > 50) return 'depleting';
+  if (score.stability < 40) return 'unstable';
+  if (score.recoveryRate > 55 && score.fatigue < 45) return 'recovering';
+  return 'stable';
+}
+
+export function getStateLabel(state: RecoveryStateLevel): string {
+  const map: Record<RecoveryStateLevel, string> = {
+    overloaded: '过载',
+    depleting: '消耗中',
+    unstable: '波动',
+    recovering: '恢复中',
+    stable: '稳定',
+  };
+  return map[state];
+}
+
+export function getStateInsight(state: RecoveryStateLevel): string {
+  const map: Record<RecoveryStateLevel, string> = {
+    overloaded: '你不是累，是输入已经压垮了恢复系统。',
+    depleting: '你在持续消耗，但没有给恢复留出空间。',
+    unstable: '你的问题不是忙，是节奏被打破了。',
+    recovering: '恢复正在发生，但还不足以建立稳定节奏。',
+    stable: '你已经回到可恢复状态。',
+  };
+  return map[state];
+}
+
+export function getStateEmoji(state: RecoveryStateLevel): string {
+  const map: Record<RecoveryStateLevel, string> = {
+    overloaded: '🔴',
+    depleting: '🟠',
+    unstable: '🟡',
+    recovering: '🟢',
+    stable: '✅',
+  };
+  return map[state];
+}
+
+export function calculateNextScore(
+  current: UserScore,
+  feedback: 'done' | 'partial' | 'skip'
+): UserScore {
+  const next = { ...current };
+
+  switch (feedback) {
+    case 'done':
+      next.fatigue = Math.max(0, next.fatigue - 15);
+      next.recoveryRate = Math.min(100, next.recoveryRate + 12);
+      next.stability = Math.min(100, next.stability + 10);
+      next.inputLoad = Math.max(0, next.inputLoad - 10);
+      next.streak += 1;
+      break;
+    case 'partial':
+      next.fatigue = Math.max(0, next.fatigue - 5);
+      next.recoveryRate = Math.min(100, next.recoveryRate + 4);
+      next.stability = Math.min(100, next.stability + 3);
+      next.inputLoad = Math.max(0, next.inputLoad - 3);
+      next.streak = 0;
+      break;
+    case 'skip':
+      next.fatigue = Math.min(100, next.fatigue + 10);
+      next.recoveryRate = Math.max(0, next.recoveryRate - 5);
+      next.stability = Math.max(0, next.stability - 5);
+      next.inputLoad = Math.min(100, next.inputLoad + 8);
+      next.streak = 0;
+      break;
+  }
+
+  return next;
+}
