@@ -2,6 +2,7 @@
 
 import { Solar } from 'lunar-javascript';
 import { BirthInfo, BaziResult } from './types';
+export type { BaziResult };
 
 const GAN_WUXING: Record<string, string> = {
   '\u7532': '\u6728', '\u4e59': '\u6728',
