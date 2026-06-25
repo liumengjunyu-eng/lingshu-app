@@ -1,7 +1,7 @@
-// 八字分析引擎 — 接入 lunar-javascript 实现真实排盘
+// BaZi Analysis Engine — powered by lunar-javascript
 import { Lunar } from 'lunar-javascript';
 
-// 五行颜色
+// Element colors
 export const WUXING_COLORS: Record<string, string> = {
   '木': '#4CAF50',
   '火': '#FF5722',
@@ -10,7 +10,7 @@ export const WUXING_COLORS: Record<string, string> = {
   '水': '#2196F3'
 };
 
-// 五行名称（英文）
+// Element names (English)
 export const WUXING_NAMES: Record<string, string> = {
   '木': 'Wood',
   '火': 'Fire',
@@ -19,19 +19,19 @@ export const WUXING_NAMES: Record<string, string> = {
   '水': 'Water'
 };
 
-// 天干五行
+// Heavenly stem → element mapping
 const WUXING_OF_STEM: Record<string, string> = {
   '甲':'木','乙':'木','丙':'火','丁':'火','戊':'土',
   '己':'土','庚':'金','辛':'金','壬':'水','癸':'水'
 };
 
-// 地支五行
+// Earthly branch → element mapping
 const WUXING_OF_BRANCH: Record<string, string> = {
   '子':'水','丑':'土','寅':'木','卯':'木','辰':'土','巳':'火',
   '午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水'
 };
 
-// 地支藏干
+// Hidden stems in each branch
 const HIDDEN_STEMS: Record<string, string[]> = {
   '子': ['癸'],
   '丑': ['己','癸','辛'],
@@ -47,15 +47,15 @@ const HIDDEN_STEMS: Record<string, string[]> = {
   '亥': ['壬','甲']
 };
 
-// 天干阴阳
+// Heavenly stem yin/yang
 const YINYANG: Record<string, string> = {
-  '甲':'阳','乙':'阴','丙':'阳','丁':'阴','戊':'阳',
-  '己':'阴','庚':'阳','辛':'阴','壬':'阳','癸':'阴'
+  '甲':'Yang','乙':'Yin','丙':'Yang','丁':'Yin','戊':'Yang',
+  '己':'Yin','庚':'Yang','辛':'Yin','壬':'Yang','癸':'Yin'
 };
 
 const WUXING_CYCLE = ['木','火','土','金','水'];
 
-// 五行旺相
+// Element state by branch
 function getElementState(branch: string): string {
   const states: Record<string, string> = {
     '寅':'旺','卯':'旺',
@@ -67,7 +67,7 @@ function getElementState(branch: string): string {
   return states[branch] || '平';
 }
 
-// 分析五行
+// Analyze five elements
 function analyzeWuxing(bazi: string[]): {
   counts: Record<string, number>;
   percentages: Record<string, number>;
@@ -105,7 +105,7 @@ function analyzeWuxing(bazi: string[]): {
   return { counts, percentages, strongest, weakest, score };
 }
 
-// 生成解读
+// Generate insights
 function generateInsights(wuxing: ReturnType<typeof analyzeWuxing>, zodiac: string): string[] {
   const { strongest, weakest } = wuxing;
   const insights: string[] = [];
@@ -132,7 +132,7 @@ function generateInsights(wuxing: ReturnType<typeof analyzeWuxing>, zodiac: stri
   return insights;
 }
 
-// 核心排盘函数
+// Core BaZi calculation
 export function calculateBaZi(
   birthYear: number,
   birthMonth: number,
@@ -140,10 +140,10 @@ export function calculateBaZi(
   birthHour: number,
   gender: string
 ) {
-  // lunar-javascript 使用阳历日期
+  // lunar-javascript uses solar calendar dates
   const lunar = Lunar.fromYmdHms(birthYear, birthMonth, birthDay, birthHour, 0, 0);
 
-  // 八字
+  // BaZi pillars
   const baziArr = lunar.getBaZi().map((p: any) => p.toString());
   const baziMap: Record<string, string> = {
     year: baziArr[0],
@@ -152,26 +152,26 @@ export function calculateBaZi(
     hour: baziArr[3]
   };
 
-  // 纳音五行
+  // Na Yin (element of each pillar)
   const l = lunar as any;
   const naYin = l.getYearNaYin() + ' ' + l.getMonthNaYin() + ' ' + l.getDayNaYin() + ' ' + l.getTimeNaYin();
 
-  // 八字十神（通过EightChar）
+  // Ten Gods (Shi Shen)
   const ec = (lunar.getEightChar() as any) || {};
   const shishen = {
-    year: ec.getYearShiShenGan?.() || '偏财',
-    month: ec.getMonthShiShenGan?.() || '正官',
-    day: '日主',
-    hour: ec.getTimeShiShenGan?.() || '食神'
+    year: ec.getYearShiShenGan?.() || 'Indirect Wealth',
+    month: ec.getMonthShiShenGan?.() || 'Direct Officer',
+    day: 'Self',
+    hour: ec.getTimeShiShenGan?.() || 'Eating God'
   };
 
   const zodiac = (lunar as any).getShengxiao() as string;
   const lunarDate = lunar.toString() as string;
 
-  // 分析五行
+  // Analyze five elements
   const wuxing = analyzeWuxing(baziArr);
 
-  // 生成解读
+  // Generate insights
   const insights = generateInsights(wuxing, zodiac);
 
   return {
@@ -186,7 +186,7 @@ export function calculateBaZi(
 }
 
 // ============================================================
-// 血型性格分析模块
+// Blood Type Personality Analysis
 // ============================================================
 
 export const BLOOD_TYPE_MAP: Record<string, {
@@ -201,56 +201,56 @@ export const BLOOD_TYPE_MAP: Record<string, {
   loveStyle: string;
 }> = {
   'A': {
-    name: 'A型',
-    traits: ['认真负责', '敏感细腻', '谨慎稳重', '有耐心'],
-    strength: '做事细致、有责任心、善于规划',
-    weakness: '容易焦虑、过度思虑、自我压力大',
+    name: 'Type A',
+    traits: ['Responsible', 'Sensitive', 'Cautious', 'Patient'],
+    strength: 'Detail-oriented, dependable, great planner',
+    weakness: 'Prone to anxiety, overthinking, high self-pressure',
     fiveElement: '木',
-    healthTendency: '肝气易郁结，注意情绪疏解',
-    communication: '委婉含蓄，不直接表达情绪',
-    workStyle: '按部就班，追求完美，适合精细工作',
-    loveStyle: '慢热但专一，重视承诺和安全感',
+    healthTendency: 'Liver energy may stagnate — release emotions regularly',
+    communication: 'Tactful and reserved, indirect with emotions',
+    workStyle: 'Methodical, perfectionist, thrives in structured work',
+    loveStyle: 'Slow to warm but deeply loyal, values commitment',
   },
   'B': {
-    name: 'B型',
-    traits: ['开朗乐观', '自由奔放', '创造性强', '感染力强'],
-    strength: '适应力强、富有创意、善于社交',
-    weakness: '过于随性、缺乏计划性、容易三分钟热度',
+    name: 'Type B',
+    traits: ['Optimistic', 'Free-spirited', 'Creative', 'Infectious energy'],
+    strength: 'Adaptable, innovative, natural social connector',
+    weakness: 'Impatient, unstructured, loses interest quickly',
     fiveElement: '火',
-    healthTendency: '心火易旺，注意情绪波动',
-    communication: '直接热情，表达欲强',
-    workStyle: '灵活多变，适合创意型工作',
-    loveStyle: '热情主动，喜欢新鲜感',
+    healthTendency: 'Heart fire may flare — watch emotional volatility',
+    communication: 'Direct and passionate, expressive communicator',
+    workStyle: 'Flexible, thrives in creative environments',
+    loveStyle: 'Warm and proactive, seeks novelty and excitement',
   },
   'O': {
-    name: 'O型',
-    traits: ['自信果断', '目标导向', '执行力强', '领导力'],
-    strength: '决策力强、抗压能力好、行动力卓越',
-    weakness: '容易固执、忽视他人感受、过于自我',
+    name: 'Type O',
+    traits: ['Confident', 'Goal-driven', 'Decisive', 'Natural leader'],
+    strength: 'Strong decision-maker, resilient, excellent executor',
+    weakness: 'Stubborn, may overlook others\' feelings, self-focused',
     fiveElement: '金',
-    healthTendency: '肺与大肠易敏感，注意呼吸系统',
-    communication: '直接了当，不拐弯抹角',
-    workStyle: '目标明确，善于管理，适合领导岗位',
-    loveStyle: '主动追求，重视彼此成长',
+    healthTendency: 'Lungs and large intestine sensitive — watch respiratory health',
+    communication: 'Straightforward, no-nonsense communicator',
+    workStyle: 'Clear goals, effective manager, suited for leadership',
+    loveStyle: 'Initiates actively, values mutual growth in relationships',
   },
   'AB': {
-    name: 'AB型',
-    traits: ['理性冷静', '思维独特', '洞察力强', '适应力强'],
-    strength: '思维灵活、善于分析、兼容并包',
-    weakness: '有时优柔寡断、情感疏离、犹豫不决',
+    name: 'Type AB',
+    traits: ['Rational', 'Unique thinker', 'Insightful', 'Adaptable'],
+    strength: 'Flexible mind, analytical, broad perspective',
+    weakness: 'Sometimes indecisive, emotionally distant, hesitant',
     fiveElement: '水+金',
-    healthTendency: '神经系统易敏感，注意睡眠',
-    communication: '理性分析，但情感表达含蓄',
-    workStyle: '善于统筹，适合战略型工作',
-    loveStyle: '理性与感性交织，需要理解的空间',
+    healthTendency: 'Nervous system sensitive — prioritize sleep quality',
+    communication: 'Analytical communicator, emotional expression is subtle',
+    workStyle: 'Strategic thinker, excels in coordination roles',
+    loveStyle: 'Rational and emotional intertwined, needs understanding and space',
   },
 };
 
 /**
- * 获取血型分析结果
- * @param bloodType 血型 (A/B/O/AB)
- * @param wuXingCount 五行分布（用于联动分析）
- * @returns 完整的血型分析报告
+ * Get blood type analysis
+ * @param bloodType Blood type (A/B/O/AB)
+ * @param wuXingCount Element distribution for combined analysis
+ * @returns Complete blood type analysis
  */
 export function getBloodTypeAnalysis(
   bloodType: string,
@@ -272,30 +272,30 @@ export function getBloodTypeAnalysis(
 
   if (!data) {
     return {
-      bloodType: '未知',
-      traits: ['信息不足', '无法分析'],
-      strength: '请完善血型信息以获得精准分析',
-      weakness: '请完善血型信息以获得精准分析',
+      bloodType: 'Unknown',
+      traits: ['Insufficient data', 'Cannot analyze'],
+      strength: 'Add your blood type for a complete analysis',
+      weakness: 'Add your blood type for a complete analysis',
       fiveElement: '—',
       healthTendency: '—',
       communication: '—',
       workStyle: '—',
       loveStyle: '—',
-      combinedAdvice: '建议在个人资料中补充血型信息，以获得更完整的分析。',
+      combinedAdvice: 'Consider adding your blood type in your profile for a more complete reading.',
     };
   }
 
-  // 血型对应五行与用户实际五行的联动分析
+  // Blood type element vs user's dominant element analysis
   const bloodWx = data.fiveElement;
   const userWx = Object.entries(wuXingCount).sort((a, b) => b[1] - a[1])[0][0];
 
   let combinedAdvice = '';
   if (bloodWx === userWx) {
-    combinedAdvice = `你的血型（${data.name}）与你的五行主导（${userWx}）同频。这让你在行动时更加顺畅，但也容易强化该五行的过旺倾向。建议适当关注${userWx}元素的平衡调节。`;
+    combinedAdvice = `Your blood type (${data.name}) aligns with your dominant element (${WUXING_NAMES[userWx] || userWx}). This means smooth energy flow — but watch for over-amplification of this element's traits. Consider balancing practices for ${WUXING_NAMES[userWx] || userWx}.`;
   } else if (bloodWx.includes('+')) {
-    combinedAdvice = `你的血型（${data.name}）属于复合五行（${bloodWx}），结合你的五行主导（${userWx}），建议在生活和工作中灵活切换角色，发挥多元化优势。`;
+    combinedAdvice = `Your blood type (${data.name}) has a composite element (${bloodWx}). Combined with your dominant element (${WUXING_NAMES[userWx] || userWx}), you have versatile energy. Lean into your multi-dimensional nature.`;
   } else {
-    combinedAdvice = `你的血型（${data.name}）对应五行「${bloodWx}」，与你当前的五行主导「${userWx}」形成互补。这种组合让你既有${userWx}的行动力，又有${bloodWx}的细腻感知。建议在决策时充分运用两者的优势。`;
+    combinedAdvice = `Your blood type (${data.name}) corresponds to the element "${WUXING_NAMES[bloodWx] || bloodWx}", complementing your dominant element "${WUXING_NAMES[userWx] || userWx}". This gives you both ${WUXING_NAMES[userWx] || userWx}'s drive and the nuanced perception of ${WUXING_NAMES[bloodWx] || bloodWx}. Use both in your decision-making.`;
   }
 
   return {
@@ -312,7 +312,7 @@ export function getBloodTypeAnalysis(
   };
 }
 
-// 生成报告数据
+// Generate report data
 export function generateReport(formData: {
   name: string;
   birthYear: number;
@@ -330,7 +330,7 @@ export function generateReport(formData: {
     formData.gender
   );
 
-  // 血型分析
+  // Blood type analysis
   const bloodTypeData = formData.bloodType
     ? getBloodTypeAnalysis(formData.bloodType, result.wuxing.counts)
     : null;
