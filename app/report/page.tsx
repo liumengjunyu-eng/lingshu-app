@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { generateReport, WUXING_COLORS, WUXING_NAMES } from "@/lib/bazi-engine";
 import { getWellnessPlan } from "@/lib/wellness-data";
+import Paywall from "@/components/Paywall";
 
 function ReportContent() {
   const searchParams = useSearchParams();
@@ -336,65 +337,8 @@ function ReportContent() {
       </section>
 
       {/* 第五屏：付费墙 */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
-        <div className="text-6xl mb-8">🔒</div>
-        <h2 className="text-5xl font-bold text-[#C9A96E] mb-6">Unlock Full Analysis</h2>
-        <p className="text-lg text-[#A1A1A6] mb-12 text-center max-w-2xl leading-relaxed">
-          You&apos;ve seen a preview of your energy blueprint. Unlock the complete analysis with detailed BaZi interpretation, 10-year fortune cycles, and personalized guidance for only <span className="text-[#C9A96E] font-bold">$9.99</span>.
-        </p>
-
-        <div className="w-full max-w-md bg-gradient-to-br from-[#1A1A2E] to-[#242438] rounded-2xl p-10 text-center border border-[#C9A96E]/30 shadow-2xl">
-          <div className="text-5xl font-bold text-[#C9A96E] mb-2">$9.99</div>
-          <p className="text-sm text-[#A1A1A6] mb-8">One-time payment · Instant access</p>
-          
-          <ul className="space-y-4 text-left mb-10">
-            {[
-              'Full 8-character BaZi chart with NaYin',
-              '10-year DaYun fortune cycles',
-              'Year-by-year life guidance',
-              'Relationship compatibility analysis',
-              'Detailed element balancing strategies',
-            ].map(item => (
-              <li key={item} className="flex items-start gap-3 text-[#F5F5F7]">
-                <span className="text-[#C9A96E] font-bold mt-0.5">✓</span>
-                <span className="text-sm">{item}</span>
-              </li>
-            ))}
-          </ul>
-          
-          <button
-            onClick={async () => {
-              const name = searchParams.get("name") || "You";
-              const year = searchParams.get("year") || "1990";
-              const month = searchParams.get("month") || "1";
-              const day = searchParams.get("day") || "1";
-              const hour = searchParams.get("hour") || "12";
-              const gender = searchParams.get("gender") || "male";
-              try {
-                const res = await fetch("/api/create-checkout-session", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ name, birthYear: parseInt(year), birthMonth: parseInt(month), birthDay: parseInt(day), birthHour: parseInt(hour), gender }),
-                });
-                const data = await res.json();
-                if (data.url) {
-                  window.location.href = data.url;
-                } else {
-                  alert("Payment unavailable: " + (data.error || "Server error"));
-                }
-              } catch (e) {
-                alert("Payment unavailable: Network error");
-              }
-            }}
-            className="w-full py-4 bg-gradient-to-r from-[#C9A96E] to-[#E8D5A3] text-[#0D0D15] font-bold text-lg rounded-xl hover:scale-105 transition shadow-lg"
-          >
-            Unlock Full Report →
-          </button>
-        </div>
-
-        <p className="mt-10 text-xs text-[#636366] text-center max-w-md">
-          Secure payment powered by Stripe. Your data is encrypted and protected.
-        </p>
+      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-[#0D0D15]">
+        <Paywall reportId={report?.id} userName={report?.name} />
       </section>
     </main>
   );
