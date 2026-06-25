@@ -415,7 +415,7 @@ export default function DeepReportPage() {
             <div style={{ fontSize: '12px', color: '#B8B2A5', letterSpacing: '2px', marginBottom: '12px' }}>LINGSHU</div>
             <div style={{ fontSize: '36px', fontWeight: 700, color: '#2C2C2C', marginBottom: '8px' }}>{symbol.persona.primary}</div>
             <div style={{ fontSize: '14px', color: '#8B8B8B', marginBottom: '16px' }}>Recovery Debt: {fatigueScore}</div>
-            <p style={{ fontSize: '16px', fontStyle: 'italic', color: '#5C5C5C', lineHeight: 1.6 }}>&ldquo;{report.hook.text}&rdquo;</p>
+            <p style={{ fontSize: '16px', fontStyle: 'italic', color: '#5C5C5C', lineHeight: 1.6 }}>&ldquo;{report.hook?.text || diagnose?.insights?.[0] || 'Your energy pattern reveals what words cannot express.'}&rdquo;</p>
             <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', gap: '12px' }}>
               {(['wood', 'fire', 'earth', 'metal', 'water'] as const).map(el => (
                 <div key={el} style={{ textAlign: 'center' }}>
