@@ -22,9 +22,7 @@ export function Hero() {
 
       <div className="max-w-3xl mx-auto text-center relative z-10">
         <div className="flex justify-center gap-2 text-xs sm:text-sm text-[#4A7C49]/50 tracking-[0.2em] uppercase mb-8">
-          <span>Recovery Intelligence</span>
-          <span className="text-[#C9A96E]">·</span>
-          <span>LingShu</span>
+          <span>5 个问题 · 5 种人格 · 1 个诊断</span>
         </div>
 
         <h1 className="font-serif font-bold text-[#1A1A1A] text-3xl sm:text-4xl md:text-5xl leading-[1.2] tracking-[-0.01em]">
