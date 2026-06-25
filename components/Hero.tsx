@@ -58,15 +58,9 @@ export function Hero() {
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
           <a
             href="/diagnose"
-            className="px-10 py-4 bg-[#4A7C49] text-white rounded-full text-[15px] sm:text-base font-medium tracking-wide hover:bg-[#3D6A3C] transition-all duration-300 shadow-[0_8px_32px_rgba(74,124,73,0.15)] hover:shadow-[0_12px_48px_rgba(74,124,73,0.25)] hover:-translate-y-0.5"
+            className="px-12 py-4 bg-[#4A7C49] text-white rounded-full text-[15px] sm:text-base font-medium tracking-wide hover:bg-[#3D6A3C] transition-all duration-300 shadow-[0_8px_32px_rgba(74,124,73,0.15)] hover:shadow-[0_12px_48px_rgba(74,124,73,0.25)] hover:-translate-y-0.5"
           >
             {t('start')}
-          </a>
-          <a
-            href="#how-it-works"
-            className="px-10 py-4 border border-[#1A1A1A]/10 text-[#1A1A1A]/60 rounded-full text-[15px] sm:text-base font-medium hover:bg-white/50 transition-all duration-300"
-          >
-            {t('learnMore')} →
           </a>
         </div>
 
