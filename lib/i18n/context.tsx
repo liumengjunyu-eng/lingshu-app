@@ -1,7 +1,7 @@
 // lib/i18n/context.tsx
 'use client';
 
-import { createContext, useContext, ReactNode, useMemo } from 'react';
+import { createContext, useContext, ReactNode, ReactElement, useMemo } from 'react';
 import zhMessages from '@/messages/zh.json';
 import zhTWMessages from '@/messages/zh-TW.json';
 import enMessages from '@/messages/en.json';
@@ -19,11 +19,13 @@ const allMessages: Record<string, Record<string, unknown>> = {
 type I18nContextType = {
   locale: string;
   t: (key: string, namespace?: string) => string;
+  rich: (key: string, namespace: string, render: (chunks: string) => ReactElement) => ReactElement | string;
 };
 
 const I18nContext = createContext<I18nContextType>({
   locale: 'zh',
   t: (key: string, namespace?: string) => key,
+  rich: (key: string, namespace: string) => key,
 });
 
 function resolveValue(obj: Record<string, unknown>, path: string): string {
@@ -39,6 +41,20 @@ function resolveValue(obj: Record<string, unknown>, path: string): string {
   return typeof current === 'string' ? current : path;
 }
 
+// 把 "before {x} after" 切分为 ['before ', <em>x</em>, ' after'] 然后调用 render
+function renderRich(template: string, render: (chunks: string) => ReactElement): ReactElement {
+  const parts = template.split(/(\{[^}]+\})/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const m = part.match(/^\{([^}]+)\}$/);
+        if (m) return render(m[1]);
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 export function I18nProvider({ locale, children }: { locale: string; children: ReactNode }) {
   const safeLocale = locale in allMessages ? locale : 'zh';
   const messages = allMessages[safeLocale];
@@ -52,6 +68,14 @@ export function I18nProvider({ locale, children }: { locale: string; children: R
       }
       return resolveValue(messages, key);
     },
+    rich: (key: string, namespace: string, render: (chunks: string) => ReactElement) => {
+      const template = resolveValue(
+        (messages[namespace] as Record<string, unknown>) || {},
+        key
+      );
+      if (typeof template !== 'string') return key;
+      return renderRich(template, render);
+    },
   }), [safeLocale, messages]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
@@ -62,6 +86,9 @@ export function useLocale() {
 }
 
 export function useTranslations(namespace?: string) {
-  const { t } = useContext(I18nContext);
-  return (key: string) => t(key, namespace);
+  const { t, rich } = useContext(I18nContext);
+  return {
+    t: (key: string) => t(key, namespace),
+    rich: (key: string, render: (chunks: string) => ReactElement) => rich(key, namespace || 'common', render),
+  };
 }

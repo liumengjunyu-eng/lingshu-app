@@ -67,7 +67,7 @@ const PROGRESS_STEPS = [
 
 export default function DiagnosePage() {
   const router = useRouter();
-  const t = useTranslations('diagnose');
+  const { t } = useTranslations('diagnose');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [primaryIssue, setPrimaryIssue] = useState<PrimaryIssue | null>(null);

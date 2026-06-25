@@ -3,7 +3,12 @@
     "title": "LingShu · Your Recovery System",
     "subtitle": "Find your recovery rhythm based on your body state.",
     "start": "Start Free Diagnosis",
-    "powered": "1 min · Free · 200+ people have found their rhythm"
+    "powered": "1 min · Free · 200+ people have found their rhythm",
+    "heroTitle": "You're not tired.",
+    "heroTitleEm": "You're in Recovery Debt.",
+    "heroSubtitle": "You sleep. You rest. You take weekends off. Yet you still feel exhausted.",
+    "learnMore": "Learn More",
+    "heroMeta": "Free · 2 minutes · No signup required"
   },
   "diagnose": {
     "step1": "What's been bothering you lately?",
