@@ -2,13 +2,13 @@
   "common": {
     "title": "灵枢 · 你的恢复系统",
     "subtitle": "基于身体状态，帮你找到恢复节奏",
-    "start": "开始免费诊断",
-    "powered": "1 分钟 · 免费 · 已帮助 200+ 人了解自己的恢复状态",
-    "heroTitle": "你不是累，|是恢复系统",
-    "heroTitleEm": "正在重新启动。",
-    "heroSubtitle": "你睡了、你休息了、你度周末了。但你依然疲惫。",
-    "learnMore": "了解原理",
-    "heroMeta": "免费 · 2 分钟 · 无需注册"
+    "start": "Start Free Diagnosis",
+    "powered": "1 min · Free · 200+ people found their rhythm",
+    "heroTitle": "You're not tired.|You're in",
+    "heroTitleEm": "Recovery Debt.",
+    "heroSubtitle": "You sleep. You rest. You take weekends off. And you're still exhausted.",
+    "learnMore": "How it works",
+    "heroMeta": "Free · 2 min · No signup"
   },
   "diagnose": {
     "step1": "你最近最困扰什么？",

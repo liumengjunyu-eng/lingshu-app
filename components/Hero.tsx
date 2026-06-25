@@ -1,12 +1,18 @@
 'use client';
 
 import { useTranslations } from '@/lib/i18n/context';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export function Hero() {
   const { t } = useTranslations('common');
 
   return (
     <section className="relative min-h-dvh flex items-center justify-center px-6 overflow-hidden bg-[#FBF9F6]">
+      {/* 右上角语言切换 */}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher />
+      </div>
+
       {/* 装饰光斑：紧凑、实心、不 blur，肉眼可见 */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[20%] left-[15%] w-64 h-64 rounded-full bg-[#4A7C49]/20 animate-breath-slow" />
