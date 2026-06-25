@@ -48,7 +48,7 @@ function calculateRecovery(primaryIssue: string, followUpChoice: string): {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { primaryIssue, followUpChoice, name, year, month, day, hour, minute, city, gender, bloodType } = body;
+    const { primaryIssue, followUpChoice, emotion, name, year, month, day, hour, minute, city, gender, bloodType } = body;
 
     // 模式A: 推理引擎模式（有出生信息）
     if (year && month && day !== undefined && hour !== undefined) {
@@ -65,6 +65,16 @@ export async function POST(request: NextRequest) {
         ...result,
       });
     }
+
+    // 模式B: FREEZE诊断模式
+    // 基于情绪生成个性化洞察
+    const EMOTION_INSIGHTS: Record<string, string[]> = {
+      exhausted: ['你的恢复缺口已经不是一天两天了', '身体在替你记住每一次透支', '停止消耗比增加恢复更重要'],
+      uncomfortable: ['你的系统在发送信号', '模糊的不适是最真实的反馈', '允许自己不舒服，不需要理由'],
+      no_motivation: ['动力不是因为不够想要，是因为能量不够了', '"应该"驱动已经失效了', '重新校准动机源'],
+      no_interest: ['你在保护剩余的能量', '兴趣需要燃料，而你燃料不足', '先恢复，兴趣自己会回来'],
+      never_rested: ['你一直没真正休息过', '"撑"不是恢复的方法', '真正的休息从停止撑开始'],
+    };
 
     // 模式B: FREEZE诊断模式（原逻辑）
     if (!primaryIssue || !followUpChoice) {
@@ -85,9 +95,20 @@ export async function POST(request: NextRequest) {
     }
 
     const scores = calculateRecovery(primaryIssue, followUpChoice);
+    const insights = (emotion && EMOTION_INSIGHTS[emotion]) || null;
 
     return NextResponse.json({
-      data: { persona: persona.persona, element: persona.element, ...scores },
+      data: {
+        persona: persona.persona,
+        element: persona.element,
+        emotion: emotion || null,
+        insights: insights || [
+          '明明休息了，但还是累',
+          '情绪容易被放大',
+          '精力恢复明显变慢',
+        ],
+        ...scores,
+      },
     });
   } catch (error) {
     console.error('[\u8bca\u65adAPI\u9519\u8bef]', error);
