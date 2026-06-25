@@ -24,6 +24,7 @@ export default function ResultPage() {
  const router = useRouter();
  const [result, setResult] = useState<any>(null);
  const [feedback, setFeedback] = useState<boolean | null>(null);
+ const [showModal, setShowModal] = useState(false);
 
  useEffect(() => {
  const stored = localStorage.getItem('diagnosis_result');
@@ -136,9 +137,7 @@ export default function ResultPage() {
  {/* ④ 一个行动 */}
  <div style={{ marginTop: '8px' }}>
  <button
- onClick={() => {
- alert('🧪 7天恢复实验即将上线。\n第7天回来看看你的变化。');
- }}
+ onClick={() => setShowModal(true)}
  className="btn-primary"
  >
  开始 7 天恢复实验 →
@@ -202,6 +201,59 @@ export default function ResultPage() {
  👎 不像
  </button>
  </div>
+ {/* ⑤ 自定义弹窗 */}
+ {showModal && (
+ <div
+ style={{
+ position: 'fixed',
+ inset: 0,
+ background: 'rgba(0,0,0,0.4)',
+ display: 'flex',
+ alignItems: 'center',
+ justifyContent: 'center',
+ zIndex: 1000,
+ padding: '20px',
+ }}
+ onClick={() => setShowModal(false)}
+ >
+ <div
+ style={{
+ background: 'var(--color-bg-card)',
+ borderRadius: '16px',
+ padding: '28px 24px',
+ maxWidth: '320px',
+ width: '100%',
+ textAlign: 'center',
+ border: '1px solid var(--color-border)',
+ }}
+ onClick={(e) => e.stopPropagation()}
+ >
+ <p style={{ fontSize: '18px', marginBottom: '12px' }}>🧪</p>
+ <p
+ style={{
+ fontSize: '18px',
+ fontWeight: 600,
+ color: 'var(--color-text-primary)',
+ marginBottom: '8px',
+ }}
+ >
+ 7天恢复实验
+ </p>
+ <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
+ 即将上线。
+ <br />
+ 第7天回来看看你的变化。
+ </p>
+ <button
+ onClick={() => setShowModal(false)}
+ className="btn-primary"
+ style={{ width: '100%' }}
+ >
+ 确定
+ </button>
+ </div>
+ </div>
+ )}
  </div>
  </main>
  );
