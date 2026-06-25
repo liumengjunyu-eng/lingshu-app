@@ -10,7 +10,7 @@ import {
   getStateEmoji,
   calculateNextScore,
 } from '@/lib/recovery/engine';
-import { getTopTask } from '@/lib/behavior';
+import { getTask, clearTaskCache } from '@/lib/behavior';
 import { generateInsight, generateStreakInsight } from '@/lib/recovery/insights';
 import { UserScore, RecoveryStateLevel } from '@/lib/recovery/types';
 
@@ -21,13 +21,14 @@ export default function RecoveryPage() {
   const [userScore, setUserScore] = useState<UserScore | null>(null);
   const [currentState, setCurrentState] = useState<RecoveryStateLevel | null>(null);
   const [task, setTask] = useState<any>(null);
+  const [taskLoading, setTaskLoading] = useState(true);
   const [feedback, setFeedback] = useState<'done' | 'partial' | 'skip' | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [insight, setInsight] = useState('');
   const [streakMessage, setStreakMessage] = useState('');
   const [isPremium, setIsPremium] = useState(false);
 
-  // 从全局状态加载恢复数据
+  // 从全局状态加载恢复数据 + AI 生成任务
   useEffect(() => {
     if (!ready) return;
 
@@ -36,7 +37,7 @@ export default function RecoveryPage() {
 
     // 转换 AppState.recovery 为 UserScore 格式
     const score: UserScore = {
-      fatigue: recovery.fatigueLevel * 10 + 20, // 映射到 0-100
+      fatigue: recovery.fatigueLevel * 10 + 20,
       inputLoad: 50 + recovery.fatigueLevel * 5,
       recoveryRate: recovery.recoveryScore * 10 + 10,
       stability: 40 + recovery.stage * 8,
@@ -50,13 +51,17 @@ export default function RecoveryPage() {
     const state = calculateState(score);
     setCurrentState(state);
 
-    // 使用 Behavior Loop 推荐任务
+    // AI 动态任务生成
     const fullState = {
       recovery: recovery,
       premium: premium,
     };
-    const recommendedTask = getTopTask(fullState as any);
-    setTask(recommendedTask);
+    setTaskLoading(true);
+
+    getTask(fullState as any).then((t: any) => {
+      setTask(t);
+      setTaskLoading(false);
+    });
   }, [ready, appState]);
 
   const handleSubmit = async () => {
@@ -105,6 +110,7 @@ export default function RecoveryPage() {
   const handleReset = () => {
     setSubmitted(false);
     setFeedback(null);
+    clearTaskCache();
     if (userScore) {
       const state = calculateState(userScore);
       setCurrentState(state);
@@ -112,11 +118,15 @@ export default function RecoveryPage() {
         recovery: appState.recovery,
         premium: appState.premium,
       };
-      setTask(getTopTask(fullState as any));
+      setTaskLoading(true);
+      getTask(fullState as any).then((t: any) => {
+        setTask(t);
+        setTaskLoading(false);
+      });
     }
   };
 
-  if (!ready || !currentState || !task || !userScore) {
+  if (!ready || !currentState || !userScore) {
     return (
       <main style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '40px 20px' }}>
         <div style={{ maxWidth: '440px', margin: '0 auto', textAlign: 'center' }}>
@@ -159,14 +169,29 @@ export default function RecoveryPage() {
           </div>
         )}
 
-        {/* 任务卡片 */}
+        {/* AI 生成任务卡片 */}
         <div className="card" style={{ marginTop: '24px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            {task.title}
-          </h2>
-          <p style={{ fontSize: '16px', color: 'var(--color-text-secondary)', marginTop: '8px', lineHeight: 1.7 }}>
-            {task.instruction}
-          </p>
+          {taskLoading ? (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <p style={{ fontSize: '15px', color: 'var(--color-text-muted)' }}>
+                🧠 正在为你生成任务...
+              </p>
+            </div>
+          ) : task ? (
+            <>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                {task.title}
+              </h2>
+              <p style={{ fontSize: '16px', color: 'var(--color-text-secondary)', marginTop: '8px', lineHeight: 1.7 }}>
+                {task.instruction}
+              </p>
+              {task.reasoning && (
+                <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginTop: '12px', fontStyle: 'italic' }}>
+                  {task.reasoning}
+                </p>
+              )}
+            </>
+          ) : null}
         </div>
 
         {/* 反馈区 */}
@@ -208,9 +233,9 @@ export default function RecoveryPage() {
             </div>
             <button
               onClick={handleSubmit}
-              disabled={!feedback}
+              disabled={!feedback || taskLoading}
               className="btn-primary"
-              style={{ marginTop: '16px', opacity: feedback ? 1 : 0.5 }}
+              style={{ marginTop: '16px', opacity: feedback && !taskLoading ? 1 : 0.5 }}
             >
               提交反馈
             </button>
