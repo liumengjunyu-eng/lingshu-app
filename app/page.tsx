@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CASES, getCasesByCategory } from "@/lib/cases";
 
 export default function Home() {
   const router = useRouter();
@@ -187,7 +188,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ==================== 6个案例 ==================== */}
+      {/* ==================== 6个案例（数据驱动） ==================== */}
       <section className="py-28 px-6 bg-[#0D0D15]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -203,119 +204,77 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {CASES.map((caseItem, index) => (
+              <div
+                key={caseItem.id}
+                className={`bg-[#1A1A2E] rounded-2xl p-6 border border-[#333] transition group ${
+                  caseItem.category === 'health'
+                    ? 'hover:border-green-500/50'
+                    : caseItem.category === 'career'
+                    ? 'hover:border-[#C9A96E]/50'
+                    : 'hover:border-pink-500/50'
+                }`}
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                {/* 分类标签 + 标题 */}
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        caseItem.category === 'health'
+                          ? 'bg-green-900/30 text-green-400'
+                          : caseItem.category === 'career'
+                          ? 'bg-[#C9A96E]/20 text-[#C9A96E]'
+                          : 'bg-pink-900/30 text-pink-400'
+                      }`}
+                    >
+                      {caseItem.category === 'health' && '🌿 Body'}
+                      {caseItem.category === 'career' && '🧭 Career'}
+                      {caseItem.category === 'relationship' && '💞 Love'}
+                    </span>
+                    <h3 className="text-lg font-bold mt-2 group-hover:text-[#C9A96E] transition leading-snug">
+                      {caseItem.title}
+                    </h3>
+                  </div>
+                  <span className="text-2xl">{caseItem.emoji}</span>
+                </div>
 
-            {/* 身体案例 1 */}
-            <div className="bg-[#1A1A2E] rounded-2xl p-6 border border-[#333] hover:border-green-500/50 transition group">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs px-2 py-0.5 bg-green-900/30 text-green-400 rounded-full font-medium">Body & Energy</span>
-                <span className="text-xs text-[#636366]">Simulated</span>
-              </div>
-              <h3 className="text-lg font-bold mb-2 group-hover:text-[#C9A96E] transition">
-                3-Year Insomnia Improved
-              </h3>
-              <p className="text-sm text-[#A1A1A6] mb-3 leading-relaxed">
-                &ldquo;I hadn&apos;t slept through the night in three years. Doctors said it was stress. 
-                LingShu showed my Fire element was depleted—I was literally running on empty.&rdquo;
-              </p>
-              <div className="text-xs text-[#636366] border-t border-[#333] pt-3 mt-3">
-                <span className="text-green-400">✓</span> Sleep quality improved 70% after following energy-balancing routines
-              </div>
-            </div>
+                {/* 用户信息 */}
+                <p className="text-[#636366] text-xs mb-3">{caseItem.user}</p>
 
-            {/* 身体案例 2 */}
-            <div className="bg-[#1A1A2E] rounded-2xl p-6 border border-[#333] hover:border-green-500/50 transition group">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs px-2 py-0.5 bg-green-900/30 text-green-400 rounded-full font-medium">Body & Energy</span>
-                <span className="text-xs text-[#636366]">Simulated</span>
-              </div>
-              <h3 className="text-lg font-bold mb-2 group-hover:text-[#C9A96E] transition">
-                Chronic Fatigue Recovery
-              </h3>
-              <p className="text-sm text-[#A1A1A6] mb-3 leading-relaxed">
-                &ldquo;I needed three coffees just to get through the morning. The report identified 
-                a Wood-Earth imbalance draining my digestive energy. Simple dietary changes changed everything.&rdquo;
-              </p>
-              <div className="text-xs text-[#636366] border-t border-[#333] pt-3 mt-3">
-                <span className="text-green-400">✓</span> Energy levels stabilized within 3 weeks of personalized adjustments
-              </div>
-            </div>
+                {/* 问题与方案 */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-red-400/70 text-xs mt-0.5">🔴</span>
+                    <p className="text-[#A1A1A6] leading-relaxed line-clamp-2">
+                      {caseItem.problem}
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-[#C9A96E] text-xs mt-0.5">✅</span>
+                    <p className="text-[#F5F5F7]/80 leading-relaxed line-clamp-2">
+                      {caseItem.solution}
+                    </p>
+                  </div>
+                </div>
 
-            {/* 人生案例 1 */}
-            <div className="bg-[#1A1A2E] rounded-2xl p-6 border border-[#333] hover:border-[#C9A96E]/50 transition group">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs px-2 py-0.5 bg-[#C9A96E]/20 text-[#C9A96E] rounded-full font-medium">Life Direction</span>
-                <span className="text-xs text-[#636366]">Simulated</span>
+                {/* 结果数据 */}
+                <div className="mt-4 pt-4 border-t border-[#333] flex items-center justify-between">
+                  <span className="text-[#C9A96E] text-sm font-semibold">
+                    {caseItem.data}
+                  </span>
+                  <span className="text-[#636366] text-xs">
+                    ⏱ {caseItem.duration}
+                  </span>
+                </div>
               </div>
-              <h3 className="text-lg font-bold mb-2 group-hover:text-[#C9A96E] transition">
-                Found Direction After Startup Failure
-              </h3>
-              <p className="text-sm text-[#A1A1A6] mb-3 leading-relaxed">
-                &ldquo;My second startup failed. I didn&apos;t know if I should try again or give up 
-                on entrepreneurship. The fortune cycle analysis showed I was in a transition phase—
-                the perfect time to learn, not build.&rdquo;
-              </p>
-              <div className="text-xs text-[#636366] border-t border-[#333] pt-3 mt-3">
-                <span className="text-[#C9A96E]">✓</span> Took a strategic 6-month break. Third startup is now profitable.
-              </div>
-            </div>
+            ))}
+          </div>
 
-            {/* 人生案例 2 */}
-            <div className="bg-[#1A1A2E] rounded-2xl p-6 border border-[#333] hover:border-[#C9A96E]/50 transition group">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs px-2 py-0.5 bg-[#C9A96E]/20 text-[#C9A96E] rounded-full font-medium">Life Direction</span>
-                <span className="text-xs text-[#636366]">Simulated</span>
-              </div>
-              <h3 className="text-lg font-bold mb-2 group-hover:text-[#C9A96E] transition">
-                Career Shift That Changed Everything
-              </h3>
-              <p className="text-sm text-[#A1A1A6] mb-3 leading-relaxed">
-                &ldquo;I was an engineer making good money but felt empty. My BaZi showed strong 
-                Water-Metal—I was meant for creative work, not logic. I transitioned to product design. 
-                Best decision of my life.&rdquo;
-              </p>
-              <div className="text-xs text-[#636366] border-t border-[#333] pt-3 mt-3">
-                <span className="text-[#C9A96E]">✓</span> Within one year, income increased 40% and job satisfaction skyrocketed
-              </div>
-            </div>
-
-            {/* 情感案例 1 */}
-            <div className="bg-[#1A1A2E] rounded-2xl p-6 border border-[#333] hover:border-pink-500/50 transition group">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs px-2 py-0.5 bg-pink-900/30 text-pink-400 rounded-full font-medium">Relationships</span>
-                <span className="text-xs text-[#636366]">Simulated</span>
-              </div>
-              <h3 className="text-lg font-bold mb-2 group-hover:text-[#C9A96E] transition">
-                Breaking the Argument Cycle
-              </h3>
-              <p className="text-sm text-[#A1A1A6] mb-3 leading-relaxed">
-                &ldquo;My partner and I fought about the same things every month. The compatibility 
-                analysis showed our elemental conflict—my Fire to his Water. Understanding this 
-                didn&apos;t fix everything, but it stopped us from taking it personally.&rdquo;
-              </p>
-              <div className="text-xs text-[#636366] border-t border-[#333] pt-3 mt-3">
-                <span className="text-pink-400">✓</span> Relationship satisfaction improved significantly after 2 months
-              </div>
-            </div>
-
-            {/* 情感案例 2 */}
-            <div className="bg-[#1A1A2E] rounded-2xl p-6 border border-[#333] hover:border-pink-500/50 transition group">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs px-2 py-0.5 bg-pink-900/30 text-pink-400 rounded-full font-medium">Relationships</span>
-                <span className="text-xs text-[#636366]">Simulated</span>
-              </div>
-              <h3 className="text-lg font-bold mb-2 group-hover:text-[#C9A96E] transition">
-                Climbing Out of Emotional Low
-              </h3>
-              <p className="text-sm text-[#A1A1A6] mb-3 leading-relaxed">
-                &ldquo;I was stuck in a dark place after a breakup. The report didn&apos;t just tell me 
-                &apos;it gets better&apos;—it showed me which elements I needed to rebuild, and gave me 
-                concrete daily practices. That specificity saved me.&rdquo;
-              </p>
-              <div className="text-xs text-[#636366] border-t border-[#333] pt-3 mt-3">
-                <span className="text-pink-400">✓</span> Reported feeling &ldquo;like myself again&rdquo; within 6 weeks
-              </div>
-            </div>
-
+          <div className="mt-12 text-center">
+            <a href="/community" className="inline-block text-[#C9A96E] hover:text-[#E8D5A3] transition border-b border-[#C9A96E]/30 pb-1">
+              Explore more transformations →
+            </a>
           </div>
         </div>
       </section>
