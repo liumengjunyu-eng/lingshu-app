@@ -7,6 +7,7 @@ import { EmotionMirror } from '@/components/EmotionMirror';
 import { HookLine } from '@/components/HookLine';
 import { RecoveryPath } from '@/components/RecoveryPath';
 import { Proverb } from '@/components/Proverb';
+import { ShareButton } from '@/components/ShareButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 type RecoveryLevel = 'good' | 'light' | 'medium' | 'heavy';
@@ -51,6 +52,11 @@ export default function ResultPage() {
 
   const recovery = RECOVERY_MAP[result.recoveryLevel as RecoveryLevel] || RECOVERY_MAP.medium;
   const emotion = result.emotion as EmotionType | undefined;
+  const shareState: 'overloaded' | 'depleting' | 'unstable' | 'recovering' | 'stable' =
+    result.recoveryLevel === 'good' ? 'stable'
+    : result.recoveryLevel === 'light' ? 'unstable'
+    : result.recoveryLevel === 'heavy' ? 'overloaded'
+    : 'depleting';
 
   return (
     <main style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
@@ -92,7 +98,10 @@ export default function ResultPage() {
           </div>
         </div>
 
-        {/* ⑥ 免费完整报告入口 */}
+        {/* ⑥ 分享按钮（社交身份标签） */}
+        <ShareButton state={shareState} locale="zh" />
+
+        {/* ⑦ 免费完整报告入口 */}
         <div className="card" style={{ marginBottom: '16px', padding: '20px', textAlign: 'center' }}>
           <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>免费查看完整报告</p>
           <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '16px', lineHeight: 1.4 }}>
@@ -103,7 +112,7 @@ export default function ResultPage() {
           </button>
         </div>
 
-        {/* ⑦ 今日箴言（新增） */}
+        {/* ⑧ 今日箴言 */}
         <Proverb />
 
         {/* 反馈埋点 */}
