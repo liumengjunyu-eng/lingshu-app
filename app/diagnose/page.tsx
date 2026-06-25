@@ -4,6 +4,30 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { EmotionType } from '@/lib/inference/types';
 
+// 5题答案 → Symbol Engine 输入翻译
+const ISSUE_TO_ENGINE: Record<string, { fatigueLevel: number; stressLevel: number; sleepQuality: number; motivation: number; digestion: number; socialLoad: number }> = {
+  'sleep_A': { fatigueLevel: 75, stressLevel: 60, sleepQuality: 25, motivation: 50, digestion: 60, socialLoad: 50 },
+  'sleep_B': { fatigueLevel: 70, stressLevel: 55, sleepQuality: 30, motivation: 40, digestion: 50, socialLoad: 45 },
+  'sleep_C': { fatigueLevel: 80, stressLevel: 65, sleepQuality: 20, motivation: 35, digestion: 45, socialLoad: 55 },
+  'sleep_D': { fatigueLevel: 65, stressLevel: 50, sleepQuality: 35, motivation: 55, digestion: 55, socialLoad: 50 },
+  'anxiety_A': { fatigueLevel: 70, stressLevel: 80, sleepQuality: 40, motivation: 45, digestion: 50, socialLoad: 50 },
+  'anxiety_B': { fatigueLevel: 75, stressLevel: 75, sleepQuality: 35, motivation: 40, digestion: 45, socialLoad: 45 },
+  'anxiety_C': { fatigueLevel: 80, stressLevel: 85, sleepQuality: 30, motivation: 30, digestion: 40, socialLoad: 40 },
+  'anxiety_D': { fatigueLevel: 60, stressLevel: 70, sleepQuality: 45, motivation: 55, digestion: 55, socialLoad: 50 },
+  'direction_A': { fatigueLevel: 60, stressLevel: 55, sleepQuality: 50, motivation: 30, digestion: 60, socialLoad: 40 },
+  'direction_B': { fatigueLevel: 55, stressLevel: 60, sleepQuality: 55, motivation: 25, digestion: 55, socialLoad: 35 },
+  'direction_C': { fatigueLevel: 65, stressLevel: 50, sleepQuality: 45, motivation: 70, digestion: 50, socialLoad: 45 },
+  'direction_D': { fatigueLevel: 60, stressLevel: 45, sleepQuality: 50, motivation: 35, digestion: 55, socialLoad: 40 },
+  'relationship_A': { fatigueLevel: 70, stressLevel: 65, sleepQuality: 50, motivation: 50, digestion: 50, socialLoad: 75 },
+  'relationship_B': { fatigueLevel: 65, stressLevel: 60, sleepQuality: 55, motivation: 45, digestion: 55, socialLoad: 60 },
+  'relationship_C': { fatigueLevel: 75, stressLevel: 70, sleepQuality: 40, motivation: 55, digestion: 45, socialLoad: 70 },
+  'relationship_D': { fatigueLevel: 60, stressLevel: 55, sleepQuality: 50, motivation: 40, digestion: 60, socialLoad: 55 },
+  'energy_A': { fatigueLevel: 80, stressLevel: 50, sleepQuality: 40, motivation: 40, digestion: 55, socialLoad: 45 },
+  'energy_B': { fatigueLevel: 85, stressLevel: 60, sleepQuality: 35, motivation: 30, digestion: 50, socialLoad: 50 },
+  'energy_C': { fatigueLevel: 75, stressLevel: 65, sleepQuality: 45, motivation: 50, digestion: 45, socialLoad: 55 },
+  'energy_D': { fatigueLevel: 90, stressLevel: 55, sleepQuality: 30, motivation: 25, digestion: 50, socialLoad: 40 },
+};
+
 type PrimaryIssue = 'sleep' | 'anxiety' | 'direction' | 'relationship' | 'energy';
 type FollowUpChoice = 'A' | 'B' | 'C' | 'D';
 
@@ -104,9 +128,16 @@ export default function DiagnosePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Diagnosis failed');
 
-      const result = { ...data.data, emotion: emo };
-      localStorage.setItem('diagnosis_result', JSON.stringify(result));
-      router.push('/result');
+      const engineKey = `${primaryIssue}_${followUpChoice}`;
+      const engineInput = ISSUE_TO_ENGINE[engineKey];
+      const symbolData = { 
+        engineInput, 
+        diagnoseResult: { ...data.data, emotion: emo },
+        primaryIssue,
+        followUpChoice,
+      };
+      localStorage.setItem('diagnosis_result', JSON.stringify(symbolData));
+      router.push('/report');
     } catch (error) {
       console.error('[Diagnosis error]', error);
       alert('Diagnosis failed. Please try again.');
