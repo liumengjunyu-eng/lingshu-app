@@ -492,15 +492,10 @@ export default function DeepReportPage() {
               <div style={{ background: '#F0EDE6', borderRadius: '12px', padding: '20px' }}>
                 {/* Bazi pillars */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '20px' }}>
-                  {[
-                    { label: 'Year', stem: bazi.yearPillar.stem, branch: bazi.yearPillar.branch },
-                    { label: 'Month', stem: bazi.monthPillar.stem, branch: bazi.monthPillar.branch },
-                    { label: 'Day', stem: bazi.dayPillar.stem, branch: bazi.dayPillar.branch },
-                    { label: 'Hour', stem: bazi.hourPillar.stem, branch: bazi.hourPillar.branch },
-                  ].map((p, i) => (
+                  {['Year', 'Month', 'Day', 'Hour'].map((label, i) => (
                     <div key={i} style={{ textAlign: 'center', padding: '12px 8px', background: '#E8E4DD', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '11px', color: '#8B8B8B', marginBottom: '4px' }}>{p.label}</div>
-                      <div style={{ fontSize: '20px', fontWeight: 600, color: '#2C2C2C' }}>{p.stem}{p.branch}</div>
+                      <div style={{ fontSize: '11px', color: '#8B8B8B', marginBottom: '4px' }}>{label}</div>
+                      <div style={{ fontSize: '20px', fontWeight: 600, color: '#2C2C2C' }}>{bazi.fourPillars?.[i] || '-'}</div>
                     </div>
                   ))}
                 </div>
@@ -509,38 +504,48 @@ export default function DeepReportPage() {
                 <div style={{ padding: '16px', background: '#E8E4DD', borderRadius: '8px', marginBottom: '16px' }}>
                   <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '4px' }}>DAY MASTER</div>
                   <div style={{ fontSize: '18px', fontWeight: 600, color: '#2C2C2C', marginBottom: '4px' }}>
-                    {bazi.dayMaster.element} {bazi.dayMaster.yinYang}
+                    {bazi.dayMaster} ({bazi.dayMasterWuxing})
                   </div>
                   <div style={{ fontSize: '13px', color: '#5C5C5C' }}>
-                    {bazi.dayMaster.description}
+                    {bazi.isWeak ? 'Weak day master — needs support' : 'Strong day master — abundant energy'}
                   </div>
                 </div>
 
                 {/* Five elements from Bazi */}
                 <div style={{ marginBottom: '12px' }}>
                   <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '8px' }}>FIVE ELEMENTS DISTRIBUTION</div>
-                  {Object.entries(bazi.fiveElements).map(([el, count]) => (
+                  {bazi.wuxingPercentages && Object.entries(bazi.wuxingPercentages).map(([el, pct]) => (
                     <div key={el} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                       <span style={{ width: '40px', fontSize: '13px', color: '#5C5C5C' }}>{ELEM_LABEL[el]}</span>
                       <div style={{ flex: 1, height: '8px', background: '#E8E4DD', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${Math.min(100, (count / 3) * 100)}%`, background: ELEM_COLORS[el], borderRadius: '4px' }} />
+                        <div style={{ height: '100%', width: `${pct}%`, background: ELEM_COLORS[el], borderRadius: '4px' }} />
                       </div>
-                      <span style={{ width: '20px', fontSize: '13px', color: '#8B8B8B', textAlign: 'right' }}>{count}</span>
+                      <span style={{ width: '30px', fontSize: '13px', color: '#8B8B8B', textAlign: 'right' }}>{pct}%</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Ten gods */}
-                {bazi.tenGods && bazi.tenGods.length > 0 && (
+                {bazi.shiShen && bazi.shiShen.filter(g => g).length > 0 && (
                   <div>
                     <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '8px' }}>KEY TEN GODS</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {bazi.tenGods.slice(0, 6).map((god, i) => (
+                      {bazi.shiShen.filter(g => g).slice(0, 6).map((god, i) => (
                         <span key={i} style={{ padding: '4px 10px', background: '#E8E4DD', borderRadius: '12px', fontSize: '12px', color: '#5C5C5C' }}>
                           {god}
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {bazi.recommendation && bazi.recommendation.length > 0 && (
+                  <div style={{ marginTop: '16px', padding: '12px', background: '#E8E4DD', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '12px', color: '#8B8B8B', marginBottom: '8px' }}>ADJUSTMENT</div>
+                    {bazi.recommendation.map((rec, i) => (
+                      <div key={i} style={{ fontSize: '13px', color: '#5C5C5C', lineHeight: 1.5, marginBottom: '4px' }}>· {rec}</div>
+                    ))}
                   </div>
                 )}
               </div>
