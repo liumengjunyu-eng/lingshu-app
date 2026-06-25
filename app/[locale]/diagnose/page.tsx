@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from '@/lib/i18n/context';
-import { EmotionType, EMOTION_LABELS } from '@/lib/inference/types';
+import { EmotionType } from '@/lib/inference/types';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 type PrimaryIssue = 'sleep' | 'anxiety' | 'direction' | 'relationship' | 'energy';
@@ -145,8 +145,8 @@ export default function DiagnosePage() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
-      <div className="absolute top-6 right-6">
+    <main className="relative" style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
+      <div className="absolute top-6 right-6 z-10">
         <LanguageSwitcher />
       </div>
       <div style={{ maxWidth: '420px', width: '100%' }}>
@@ -210,8 +210,9 @@ export default function DiagnosePage() {
                     textAlign: 'left', transition: 'border-color 0.2s ease, background 0.2s ease',
                   }}
                 >
-                  <span style={{ fontWeight: 500, color: 'var(--color-text-muted)', minWidth: '24px' }}>{option.value}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--color-text-muted)', minWidth: '24px' }}>{option.value}</span>
                   <span style={{ fontSize: '18px' }}>{option.emoji}</span>
+                  <span style={{ fontSize: '15px', color: 'var(--color-text-primary)' }}>{t(`followup.${primaryIssue}.${option.value}`)}</span>
                 </button>
               ))}
             </div>
@@ -247,7 +248,7 @@ export default function DiagnosePage() {
                 >
                   <span style={{ fontSize: '24px' }}>{opt.emoji}</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontWeight: 500 }}>{EMOTION_LABELS[opt.value]}</span>
+                    <span style={{ fontWeight: 500 }}>{t(`emotion.${opt.value}`)}</span>
                   </div>
                 </button>
               ))}

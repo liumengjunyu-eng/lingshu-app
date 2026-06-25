@@ -12,7 +12,7 @@
   },
   "diagnose": {
     "step1": "What's been bothering you lately?",
-    "step2": "When you can't sleep, which one fits you more:",
+    "step2": "When sleep is off, which fits you more:",
     "step3": "What emotion have you been feeling most recently?",
     "options": {
       "sleep": "I haven't been sleeping well",
@@ -20,6 +20,20 @@
       "direction": "I feel lost",
       "relationship": "Relationships have been difficult",
       "energy": "My energy keeps dropping"
+    },
+    "followup": {
+      "sleep": { "A": "Can't stop thinking", "B": "Waking up at night", "C": "Waking too early", "D": "Can't fall asleep" },
+      "anxiety": { "A": "Replaying the same worry", "B": "Vague sense of fear", "C": "Heart racing", "D": "Want to avoid everything" },
+      "direction": { "A": "Too much input", "B": "Overthinking, not acting", "C": "Acting, then regretting", "D": "Lists I don't follow" },
+      "relationship": { "A": "Over-giving", "B": "Going silent", "C": "Emotional outbursts", "D": "Going cold" },
+      "energy": { "A": "Tired after exercise", "B": "Body feels heavy", "C": "Irritable", "D": "Just want to lie down" }
+    },
+    "emotion": {
+      "exhausted": "Constant exhaustion",
+      "uncomfortable": "Off, but I can't name it",
+      "no_motivation": "No drive toward the future",
+      "no_interest": "Nothing feels interesting",
+      "never_rested": "Always want rest, never rested"
     }
   }
 }
