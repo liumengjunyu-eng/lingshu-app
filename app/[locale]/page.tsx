@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { HookLine } from '@/components/HookLine';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
