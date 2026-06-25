@@ -305,23 +305,23 @@ function ReportContent() {
           );
         })()}
 
-        {/* ====== 第七屏：付费墙 ====== */}
+        {/* ====== 第七屏：等待名单 ====== */}
         <div className="card" style={{ marginBottom: '12px', textAlign: 'center', padding: '24px 20px' }}>
           <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
             以上就是你的免费报告内容
           </p>
           <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', fontWeight: 600, marginBottom: '16px' }}>
-            解锁完整深度分析，获得持续跟踪与个性化建议
+            深度分析即将上线，加入等待名单
           </p>
           <button
             onClick={() => setShowPayModal(true)}
             className="btn-primary"
             style={{ width: '100%' }}
           >
-            深度分析 ¥69
+            加入等待名单
           </button>
           <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '8px' }}>
-            包含 DeepSeek AI 深度解读 + 七日跟踪 + PDF 报告
+            上线后第一时间通知你
           </p>
         </div>
 
