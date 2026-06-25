@@ -27,7 +27,7 @@ export function Hero() {
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center">
           <a
-            href="/report"
+            href="/diagnose"
             className="px-12 py-4 bg-[#4A7C49] text-white rounded-full text-[15px] sm:text-base font-medium tracking-wide hover:bg-[#3D6A3C] transition-all duration-300 shadow-[0_8px_32px_rgba(74,124,73,0.15)] hover:shadow-[0_12px_48px_rgba(74,124,73,0.25)] hover:-translate-y-0.5"
           >
             Start Your Assessment →
@@ -35,7 +35,7 @@ export function Hero() {
         </div>
 
         <p className="text-[#B0B0B0] text-xs sm:text-sm mt-8 tracking-wide">
-          Free &middot; Just your birth info &middot; No signup required
+          Free &middot; 5 questions &middot; 2 minutes
         </p>
       </div>
     </section>
