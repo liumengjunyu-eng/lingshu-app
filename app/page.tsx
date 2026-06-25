@@ -13,6 +13,7 @@ export default function Home() {
     birthHour: "",
     birthMinute: "0",
     gender: "male",
+    bloodType: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +42,7 @@ export default function Home() {
         day: formData.birthDay,
         hour: formData.birthHour || "",
         gender: formData.gender,
+        bloodType: formData.bloodType || "",
       });
       router.push(`/report?${params.toString()}`);
     } catch (err) {
@@ -593,6 +595,29 @@ export default function Home() {
                 ))}
               </select>
               <p className="text-xs text-[#636366] mt-1">If unknown, we analyze based on date alone</p>
+            </div>
+
+            {/* 血型 */}
+            <div>
+              <label htmlFor="bloodType" className="block text-sm text-[#A1A1A6] mb-2">
+                Blood Type <span className="text-[#636366] text-xs">(optional, for personality analysis)</span>
+              </label>
+              <select
+                id="bloodType"
+                name="bloodType"
+                value={formData.bloodType}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#1A1A2E] border border-[#333] rounded-lg text-[#F5F5F7] focus:border-[#C9A96E] focus:outline-none transition appearance-none"
+              >
+                <option value="">Select blood type (optional)</option>
+                <option value="A">Type A</option>
+                <option value="B">Type B</option>
+                <option value="O">Type O</option>
+                <option value="AB">Type AB</option>
+              </select>
+              <p className="text-xs text-[#636366] mt-1">
+                💡 Blood type personality analysis is popular in Japan, Korea, and beyond
+              </p>
             </div>
 
             {/* 性别 */}

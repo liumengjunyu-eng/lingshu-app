@@ -185,6 +185,133 @@ export function calculateBaZi(
   };
 }
 
+// ============================================================
+// 血型性格分析模块
+// ============================================================
+
+export const BLOOD_TYPE_MAP: Record<string, {
+  name: string;
+  traits: string[];
+  strength: string;
+  weakness: string;
+  fiveElement: string;
+  healthTendency: string;
+  communication: string;
+  workStyle: string;
+  loveStyle: string;
+}> = {
+  'A': {
+    name: 'A型',
+    traits: ['认真负责', '敏感细腻', '谨慎稳重', '有耐心'],
+    strength: '做事细致、有责任心、善于规划',
+    weakness: '容易焦虑、过度思虑、自我压力大',
+    fiveElement: '木',
+    healthTendency: '肝气易郁结，注意情绪疏解',
+    communication: '委婉含蓄，不直接表达情绪',
+    workStyle: '按部就班，追求完美，适合精细工作',
+    loveStyle: '慢热但专一，重视承诺和安全感',
+  },
+  'B': {
+    name: 'B型',
+    traits: ['开朗乐观', '自由奔放', '创造性强', '感染力强'],
+    strength: '适应力强、富有创意、善于社交',
+    weakness: '过于随性、缺乏计划性、容易三分钟热度',
+    fiveElement: '火',
+    healthTendency: '心火易旺，注意情绪波动',
+    communication: '直接热情，表达欲强',
+    workStyle: '灵活多变，适合创意型工作',
+    loveStyle: '热情主动，喜欢新鲜感',
+  },
+  'O': {
+    name: 'O型',
+    traits: ['自信果断', '目标导向', '执行力强', '领导力'],
+    strength: '决策力强、抗压能力好、行动力卓越',
+    weakness: '容易固执、忽视他人感受、过于自我',
+    fiveElement: '金',
+    healthTendency: '肺与大肠易敏感，注意呼吸系统',
+    communication: '直接了当，不拐弯抹角',
+    workStyle: '目标明确，善于管理，适合领导岗位',
+    loveStyle: '主动追求，重视彼此成长',
+  },
+  'AB': {
+    name: 'AB型',
+    traits: ['理性冷静', '思维独特', '洞察力强', '适应力强'],
+    strength: '思维灵活、善于分析、兼容并包',
+    weakness: '有时优柔寡断、情感疏离、犹豫不决',
+    fiveElement: '水+金',
+    healthTendency: '神经系统易敏感，注意睡眠',
+    communication: '理性分析，但情感表达含蓄',
+    workStyle: '善于统筹，适合战略型工作',
+    loveStyle: '理性与感性交织，需要理解的空间',
+  },
+};
+
+/**
+ * 获取血型分析结果
+ * @param bloodType 血型 (A/B/O/AB)
+ * @param wuXingCount 五行分布（用于联动分析）
+ * @returns 完整的血型分析报告
+ */
+export function getBloodTypeAnalysis(
+  bloodType: string,
+  wuXingCount: Record<string, number>
+): {
+  bloodType: string;
+  traits: string[];
+  strength: string;
+  weakness: string;
+  fiveElement: string;
+  healthTendency: string;
+  communication: string;
+  workStyle: string;
+  loveStyle: string;
+  combinedAdvice: string;
+} {
+  const type = bloodType.toUpperCase();
+  const data = BLOOD_TYPE_MAP[type];
+
+  if (!data) {
+    return {
+      bloodType: '未知',
+      traits: ['信息不足', '无法分析'],
+      strength: '请完善血型信息以获得精准分析',
+      weakness: '请完善血型信息以获得精准分析',
+      fiveElement: '—',
+      healthTendency: '—',
+      communication: '—',
+      workStyle: '—',
+      loveStyle: '—',
+      combinedAdvice: '建议在个人资料中补充血型信息，以获得更完整的分析。',
+    };
+  }
+
+  // 血型对应五行与用户实际五行的联动分析
+  const bloodWx = data.fiveElement;
+  const userWx = Object.entries(wuXingCount).sort((a, b) => b[1] - a[1])[0][0];
+
+  let combinedAdvice = '';
+  if (bloodWx === userWx) {
+    combinedAdvice = `你的血型（${data.name}）与你的五行主导（${userWx}）同频。这让你在行动时更加顺畅，但也容易强化该五行的过旺倾向。建议适当关注${userWx}元素的平衡调节。`;
+  } else if (bloodWx.includes('+')) {
+    combinedAdvice = `你的血型（${data.name}）属于复合五行（${bloodWx}），结合你的五行主导（${userWx}），建议在生活和工作中灵活切换角色，发挥多元化优势。`;
+  } else {
+    combinedAdvice = `你的血型（${data.name}）对应五行「${bloodWx}」，与你当前的五行主导「${userWx}」形成互补。这种组合让你既有${userWx}的行动力，又有${bloodWx}的细腻感知。建议在决策时充分运用两者的优势。`;
+  }
+
+  return {
+    bloodType: data.name,
+    traits: data.traits,
+    strength: data.strength,
+    weakness: data.weakness,
+    fiveElement: data.fiveElement,
+    healthTendency: data.healthTendency,
+    communication: data.communication,
+    workStyle: data.workStyle,
+    loveStyle: data.loveStyle,
+    combinedAdvice,
+  };
+}
+
 // 生成报告数据
 export function generateReport(formData: {
   name: string;
@@ -193,6 +320,7 @@ export function generateReport(formData: {
   birthDay: number;
   birthHour: number;
   gender: string;
+  bloodType?: string;
 }) {
   const result = calculateBaZi(
     formData.birthYear,
@@ -202,9 +330,16 @@ export function generateReport(formData: {
     formData.gender
   );
 
+  // 血型分析
+  const bloodTypeData = formData.bloodType
+    ? getBloodTypeAnalysis(formData.bloodType, result.wuxing.counts)
+    : null;
+
   return {
     name: formData.name,
     gender: formData.gender,
+    bloodType: formData.bloodType || null,
+    bloodTypeData,
     ...result
   };
 }

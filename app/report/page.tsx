@@ -19,8 +19,9 @@ function ReportContent() {
       const day = parseInt(searchParams.get("day") || "1");
       const hour = parseInt(searchParams.get("hour") || "12");
       const gender = searchParams.get("gender") || "male";
+      const bloodType = searchParams.get("bloodType") || "";
 
-      const reportData = generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender });
+      const reportData = generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender, bloodType });
       setReport(reportData);
     } catch (e: any) {
       setError("Failed to generate report: " + (e?.message || "Unknown error"));
@@ -61,7 +62,7 @@ function ReportContent() {
     );
   }
 
-  const { name, bazi, naYin, shishen, lunarDate, zodiac, wuxing, insights } = report;
+  const { name, bazi, naYin, shishen, lunarDate, zodiac, wuxing, insights, bloodType, bloodTypeData } = report;
   const wellnessPlan = getWellnessPlan(wuxing.weakest);
   const dayLabel = ['年柱','月柱','日柱','时柱'];
   const baziKeys = ['year', 'month', 'day', 'hour'] as const;
@@ -194,7 +195,79 @@ function ReportContent() {
         </section>
       )}
 
-      {/* 第四屏：每日能量 */}
+      {/* 第四屏：血型分析 */}
+      {bloodType && bloodTypeData && (
+        <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-gradient-to-b from-[#0D0D15] to-[#111122]">
+          <div className="text-xs text-[#636366] mb-2 tracking-widest uppercase font-semibold">Personality Profile</div>
+          <h2 className="text-5xl font-bold text-[#C9A96E] mb-6">Blood Type Analysis</h2>
+          <p className="text-lg text-[#A1A1A6] mb-12">Type {bloodType} · Element {bloodTypeData.fiveElement}</p>
+
+          <div className="w-full max-w-4xl">
+            {/* 血型基本信息卡片 */}
+            <div className="bg-[#1A1A2E] rounded-2xl p-8 border border-[#C9A96E]/20 mb-8">
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-4xl">🧬</span>
+                <div>
+                  <h3 className="text-2xl font-bold text-[#C9A96E]">Type {bloodType} Personality</h3>
+                  <p className="text-sm text-[#636366]">Based on blood type psychology research</p>
+                </div>
+                <span className="ml-auto text-3xl font-bold text-[#C9A96E]/30">{bloodType}</span>
+              </div>
+
+              {/* 性格标签 */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                {bloodTypeData.traits.map((trait: string, i: number) => (
+                  <span key={i} className="px-3 py-1 bg-[#C9A96E]/10 text-[#C9A96E] rounded-full text-sm">
+                    {trait}
+                  </span>
+                ))}
+              </div>
+
+              {/* 四宫格详情 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-[#0D0D15]/50 p-4 rounded-xl">
+                  <div className="text-xs text-[#636366] mb-1">💪 Strengths</div>
+                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.strength}</p>
+                </div>
+                <div className="bg-[#0D0D15]/50 p-4 rounded-xl">
+                  <div className="text-xs text-[#636366] mb-1">⚠️ Watch Out</div>
+                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.weakness}</p>
+                </div>
+                <div className="bg-[#0D0D15]/50 p-4 rounded-xl">
+                  <div className="text-xs text-[#636366] mb-1">💼 Work Style</div>
+                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.workStyle}</p>
+                </div>
+                <div className="bg-[#0D0D15]/50 p-4 rounded-xl">
+                  <div className="text-xs text-[#636366] mb-1">💕 Love Style</div>
+                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.loveStyle}</p>
+                </div>
+              </div>
+
+              {/* 健康与沟通 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-[#0D0D15]/50 p-4 rounded-xl border-l-2 border-green-500/50">
+                  <div className="text-xs text-green-400 mb-1">🏥 Health Tendency</div>
+                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.healthTendency}</p>
+                </div>
+                <div className="bg-[#0D0D15]/50 p-4 rounded-xl border-l-2 border-blue-500/50">
+                  <div className="text-xs text-blue-400 mb-1">💬 Communication</div>
+                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.communication}</p>
+                </div>
+              </div>
+
+              {/* 五行联动建议 */}
+              {bloodTypeData.combinedAdvice && (
+                <div className="bg-gradient-to-r from-[#C9A96E]/10 to-transparent p-5 rounded-xl border-l-4 border-[#C9A96E]">
+                  <div className="text-sm text-[#C9A96E] font-semibold mb-2">💡 Blood Type + Five Elements</div>
+                  <p className="text-[#F5F5F7] text-sm leading-relaxed">{bloodTypeData.combinedAdvice}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 第五屏：每日能量 */}
       <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-gradient-to-b from-[#0D0D15] to-[#16162A]">
         <div className="text-xs text-[#636366] mb-2 tracking-widest uppercase font-semibold">Daily Energy</div>
         <h2 className="text-5xl font-bold text-[#C9A96E] mb-16">Today&apos;s Practice</h2>
