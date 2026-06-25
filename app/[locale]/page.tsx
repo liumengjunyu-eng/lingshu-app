@@ -8,26 +8,29 @@ export default function HomePage() {
   const t = useTranslations('common');
 
   return (
-    <main className="min-h-screen bg-[#FBF9F6] flex flex-col items-center justify-center px-6 py-12">
-      <div className="absolute top-6 right-6">
+    <main className="min-h-dvh bg-[#FBF9F6] flex flex-col">
+      <div className="fixed top-6 right-6 z-10">
         <LanguageSwitcher />
       </div>
 
-      <div className="max-w-2xl mx-auto text-center space-y-8">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-16 pt-20">
         <HookLine />
 
-        <p className="text-[17px] text-[#4A4A4A] max-w-md mx-auto leading-relaxed">
+        <p className="mt-10 text-[17px] text-[#6B6B6B] max-w-sm mx-auto text-center leading-relaxed">
           {t('subtitle')}
         </p>
 
         <a
           href="/diagnose"
-          className="inline-flex items-center px-12 py-4 mx-auto text-lg font-medium text-white bg-[#4A7C49] rounded-xl hover:bg-[#3D6A3C] transition-all shadow-[0_4px_12px_rgba(74,124,73,0.2)]"
+          className="mt-10 inline-flex items-center gap-2 px-10 py-[14px] text-[17px] font-medium text-white bg-[#4A7C49] rounded-full hover:bg-[#3D6A3C] active:bg-[#346533] transition-all"
         >
-          {t('start')} →
+          {t('start')}
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
         </a>
 
-        <p className="text-[11px] text-[#B0B0B0] tracking-widest uppercase mt-6">
+        <p className="mt-auto pt-12 text-[11px] text-[#B0B0B0] tracking-[0.08em]">
           {t('powered')}
         </p>
       </div>
