@@ -25,26 +25,7 @@ export default function ResultPage() {
  const router = useRouter();
  const [result, setResult] = useState<any>(null);
  const [feedback, setFeedback] = useState<boolean | null>(null);
- const [showModal, setShowModal] = useState(false);
- const [showWaitlist, setShowWaitlist] = useState(false);
- const [waitlistEmail, setWaitlistEmail] = useState('');
- const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'loading' | 'done'>('idle');
  const [showBirthForm, setShowBirthForm] = useState(false);
-
- const handleWaitlistSubmit = async () => {
- if (!waitlistEmail || !waitlistEmail.includes('@')) return;
- setWaitlistStatus('loading');
- try {
- await fetch('/api/waitlist', {
- method: 'POST',
- headers: { 'Content-Type': 'application/json' },
- body: JSON.stringify({ email: waitlistEmail }),
- });
- setWaitlistStatus('done');
- } catch {
- setWaitlistStatus('idle');
- }
- };
 
  useEffect(() => {
  const stored = localStorage.getItem('diagnosis_result');
@@ -157,38 +138,38 @@ export default function ResultPage() {
  {/* ④ 付费墙 + 完整报告入口 */}
  <div className="card" style={{ marginBottom: '16px', padding: '20px', textAlign: 'center' }}>
  <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
- 解锁完整报告
+ 免费查看完整报告
  </p>
  <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '16px', lineHeight: 1.4 }}>
- 你的五行能量图、八字命理、血型分析、六维恢复方案
+ 五行能量图、八字命理、血型分析、六维恢复方案
  </p>
  <button
  onClick={() => setShowBirthForm(true)}
  className="btn-primary"
  style={{ width: '100%' }}
  >
- 解锁完整报告 ¥69
+ 免费完整报告
  </button>
  </div>
 
  {/* ⑤ 一个行动 */}
  <div style={{ marginTop: '8px' }}>
  <button
- onClick={() => setShowModal(true)}
+ onClick={() => setShowBirthForm(true)}
  style={{
   width: '100%',
   padding: '14px',
   fontSize: '16px',
   fontWeight: 500,
-  background: 'var(--color-bg-card)',
-  color: 'var(--color-text-primary)',
-  border: '1px solid var(--color-border)',
+  color: 'var(--color-primary)',
+  background: 'transparent',
+  border: '1.5px dashed var(--color-border)',
   borderRadius: '10px',
   cursor: 'pointer',
   transition: 'all 0.2s',
  }}
  >
- 开始 7 天恢复实验 →
+ 免费完整报告
  </button>
  <p
  style={{
@@ -198,7 +179,7 @@ export default function ResultPage() {
  marginTop: '10px',
  }}
  >
- 第 7 天回来看看你的变化
+ 填写出生信息，生成完整解析
  </p>
  </div>
 
@@ -249,61 +230,6 @@ export default function ResultPage() {
  👎 不像
  </button>
  </div>
- {/* ⑥ 7天恢复实验弹窗 */}
- {showModal && (
- <div
- style={{
- position: 'fixed',
- inset: 0,
- background: 'rgba(0,0,0,0.4)',
- display: 'flex',
- alignItems: 'center',
- justifyContent: 'center',
- zIndex: 1000,
- padding: '20px',
- }}
- onClick={() => setShowModal(false)}
- >
- <div
- style={{
- background: 'var(--color-bg-card)',
- borderRadius: '16px',
- padding: '28px 24px',
- maxWidth: '320px',
- width: '100%',
- textAlign: 'center',
- border: '1px solid var(--color-border)',
- }}
- onClick={(e) => e.stopPropagation()}
- >
- <p style={{ fontSize: '18px', marginBottom: '12px' }}>🧪</p>
- <p
- style={{
- fontSize: '18px',
- fontWeight: 600,
- color: 'var(--color-text-primary)',
- marginBottom: '8px',
- }}
- >
- 7天恢复实验
- </p>
- <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
- 即将上线。
- <br />
- 第7天回来看看你的变化。
- </p>
- <button
- onClick={() => setShowModal(false)}
- className="btn-primary"
- style={{ width: '100%' }}
- >
- 确定
- </button>
- </div>
- </div>
- )}
-
- {/* ⑦ 等待名单弹窗 */}
  {/* 出生信息表单弹窗 */}
  {showBirthForm && (
  <BirthInfoForm
@@ -321,51 +247,6 @@ export default function ResultPage() {
  }}
  onClose={() => setShowBirthForm(false)}
  />
- )}
-
- {/* 等待名单弹窗（保留备用） */}
- {showWaitlist && (
- <div
- style={{
- position: 'fixed',
- inset: 0,
- background: 'rgba(0,0,0,0.4)',
- display: 'flex',
- alignItems: 'center',
- justifyContent: 'center',
- zIndex: 1000,
- padding: '20px',
- }}
- onClick={() => { setShowWaitlist(false); setWaitlistStatus('idle'); setWaitlistEmail(''); }}
- >
- <div
- style={{
- background: 'var(--color-bg-card)',
- borderRadius: '16px',
- padding: '28px 24px',
- maxWidth: '340px',
- width: '100%',
- textAlign: 'center',
- border: '1px solid var(--color-border)',
- }}
- onClick={(e) => e.stopPropagation()}
- >
- <p style={{ fontSize: '36px', marginBottom: '12px' }}>🎉</p>
- <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
- 良好体验
- </p>
- <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '24px' }}>
- 感谢参与测试。
- </p>
- <button
- onClick={() => { setShowWaitlist(false); setWaitlistStatus('idle'); setWaitlistEmail(''); }}
- className="btn-primary"
- style={{ width: '100%' }}
- >
- 知道了
- </button>
- </div>
- </div>
  )}
  </div>
  </main>
