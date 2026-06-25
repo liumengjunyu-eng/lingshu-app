@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import BirthInfoForm from '../components/BirthInfoForm';
 
 type RecoveryLevel = 'good' | 'light' | 'medium' | 'heavy';
 
@@ -28,6 +29,7 @@ export default function ResultPage() {
  const [showWaitlist, setShowWaitlist] = useState(false);
  const [waitlistEmail, setWaitlistEmail] = useState('');
  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'loading' | 'done'>('idle');
+ const [showBirthForm, setShowBirthForm] = useState(false);
 
  const handleWaitlistSubmit = async () => {
  if (!waitlistEmail || !waitlistEmail.includes('@')) return;
@@ -152,7 +154,7 @@ export default function ResultPage() {
  </div>
  </div>
 
- {/* ④ 付费墙 + 等待名单 */}
+ {/* ④ 付费墙 + 完整报告入口 */}
  <div className="card" style={{ marginBottom: '16px', padding: '20px', textAlign: 'center' }}>
  <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
  解锁完整报告
@@ -161,7 +163,7 @@ export default function ResultPage() {
  你的五行能量图、八字命理、血型分析、六维恢复方案
  </p>
  <button
- onClick={() => setShowWaitlist(true)}
+ onClick={() => setShowBirthForm(true)}
  className="btn-primary"
  style={{ width: '100%' }}
  >
@@ -302,6 +304,26 @@ export default function ResultPage() {
  )}
 
  {/* ⑦ 等待名单弹窗 */}
+ {/* 出生信息表单弹窗 */}
+ {showBirthForm && (
+ <BirthInfoForm
+ onSubmit={(data) => {
+ const params = new URLSearchParams({
+ name: data.name,
+ gender: data.gender,
+ year: data.birthYear.toString(),
+ month: data.birthMonth.toString(),
+ day: data.birthDay.toString(),
+ hour: data.birthHour.toString(),
+ bloodType: data.bloodType,
+ });
+ router.push(`/report?${params}`);
+ }}
+ onClose={() => setShowBirthForm(false)}
+ />
+ )}
+
+ {/* 等待名单弹窗（保留备用） */}
  {showWaitlist && (
  <div
  style={{
@@ -328,14 +350,12 @@ export default function ResultPage() {
  }}
  onClick={(e) => e.stopPropagation()}
  >
- {waitlistStatus === 'done' ? (
- <>
  <p style={{ fontSize: '36px', marginBottom: '12px' }}>🎉</p>
  <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
- 已加入等待名单
+ 良好体验
  </p>
  <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '24px' }}>
- 完整报告上线后，第一时间通知你。
+ 感谢参与测试。
  </p>
  <button
  onClick={() => { setShowWaitlist(false); setWaitlistStatus('idle'); setWaitlistEmail(''); }}
@@ -344,48 +364,6 @@ export default function ResultPage() {
  >
  知道了
  </button>
- </>
- ) : (
- <>
- <p style={{ fontSize: '24px', marginBottom: '12px' }}>🔓</p>
- <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
- 完整报告即将上线
- </p>
- <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
- 留下邮箱，上线后第一时间通知你。
- </p>
- <input
- type="email"
- placeholder="输入邮箱地址"
- value={waitlistEmail}
- onChange={(e) => setWaitlistEmail(e.target.value)}
- onKeyDown={(e) => e.key === 'Enter' && handleWaitlistSubmit()}
- style={{
- width: '100%',
- padding: '12px 14px',
- fontSize: '15px',
- borderRadius: '10px',
- border: '1px solid var(--color-border)',
- background: 'var(--color-bg)',
- color: 'var(--color-text-primary)',
- outline: 'none',
- boxSizing: 'border-box',
- marginBottom: '12px',
- }}
- />
- <button
- onClick={handleWaitlistSubmit}
- disabled={waitlistStatus === 'loading' || !waitlistEmail.includes('@')}
- className="btn-primary"
- style={{
- width: '100%',
- opacity: waitlistStatus === 'loading' || !waitlistEmail.includes('@') ? 0.6 : 1,
- }}
- >
- {waitlistStatus === 'loading' ? '提交中...' : '加入等待名单'}
- </button>
- </>
- )}
  </div>
  </div>
  )}

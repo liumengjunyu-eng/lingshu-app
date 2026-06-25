@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { generateReport, WUXING_COLORS, WUXING_NAMES } from "@/lib/bazi-engine";
-import { getWellnessPlan } from "@/lib/wellness-data";
-import Paywall from "@/components/Paywall";
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { generateReport, WUXING_COLORS, WUXING_NAMES, BLOOD_TYPE_MAP, getBloodTypeAnalysis } from '@/lib/bazi-engine';
+import { getWellnessPlan } from '@/lib/wellness-data';
 
 function ReportContent() {
   const searchParams = useSearchParams();
@@ -14,25 +13,31 @@ function ReportContent() {
 
   useEffect(() => {
     try {
-      const name = searchParams.get("name") || "You";
-      const year = parseInt(searchParams.get("year") || "1990");
-      const month = parseInt(searchParams.get("month") || "1");
-      const day = parseInt(searchParams.get("day") || "1");
-      const hour = parseInt(searchParams.get("hour") || "12");
-      const gender = searchParams.get("gender") || "male";
-      const bloodType = searchParams.get("bloodType") || "";
-      const intent = searchParams.get("intent") || "health";
+      const name = searchParams.get('name') || '你';
+      const year = parseInt(searchParams.get('year') || '1990');
+      const month = parseInt(searchParams.get('month') || '1');
+      const day = parseInt(searchParams.get('day') || '1');
+      const hour = parseInt(searchParams.get('hour') || '12');
+      const gender = searchParams.get('gender') || 'male';
+      const bloodType = searchParams.get('bloodType') || '';
 
-      const reportData = generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender, bloodType });
+      const reportData = generateReport({
+        name,
+        birthYear: year,
+        birthMonth: month,
+        birthDay: day,
+        birthHour: hour,
+        gender,
+        bloodType: bloodType || undefined,
+      });
 
-      // 先立刻渲染规则引擎的解读
-      setReport({ ...reportData, intent });
+      setReport({ ...reportData, bloodType });
       setLoading(false);
 
-      // 异步获取 AI 解读（不阻塞页面，超时/失败不影响）
-      fetch("/api/interpret", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      // 异步获取 AI 解读（不阻塞）
+      fetch('/api/interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
           bazi: reportData.bazi,
@@ -41,35 +46,29 @@ function ReportContent() {
           lunarDate: reportData.lunarDate,
           zodiac: reportData.zodiac,
           wuxing: reportData.wuxing,
-          intent,
+          intent: 'health',
           bloodType,
         }),
       })
         .then((res) => res.json())
         .then((data) => {
           if (data.sections && data.sections.length > 0) {
-            setReport((prev: any) => prev ? { ...prev, insights: data.sections } : prev);
+            setReport((prev: any) => prev ? { ...prev, aiSections: data.sections } : prev);
           }
         })
-        .catch(() => {
-          // 失败保持规则引擎的解读
-        });
+        .catch(() => {});
     } catch (e: any) {
-      setError("Failed to generate report: " + (e?.message || "Unknown error"));
+      setError(e?.message || '生成报告失败');
       setLoading(false);
     }
   }, [searchParams]);
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#0D0D15]">
-        <div className="text-center">
-          <div className="text-2xl text-[#C9A96E] mb-4 font-bold">Consulting the Oracle...</div>
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-2 h-2 bg-[#C9A96E] rounded-full animate-pulse"></div>
-            <div className="text-[#A1A1A6]">Decoding your energy pattern</div>
-            <div className="w-2 h-2 bg-[#C9A96E] rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
-          </div>
+      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '36px', marginBottom: '16px' }}>🔮</div>
+          <p style={{ color: 'var(--color-text-muted)' }}>正在推算你的能量图谱...</p>
         </div>
       </main>
     );
@@ -77,307 +76,256 @@ function ReportContent() {
 
   if (error || !report) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#0D0D15]">
-        <div className="text-center text-red-400 p-8 max-w-md">
-          <div className="text-3xl mb-4">⚠️</div>
-          <div className="text-xl mb-4 font-bold">{error || "Failed to generate report"}</div>
-          <button 
-            onClick={() => window.history.back()} 
-            className="text-[#C9A96E] underline hover:text-[#E8D5A3] transition"
-          >
-            ← Go back and try again
-          </button>
+      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '24px', maxWidth: '400px' }}>
+          <div style={{ fontSize: '36px', marginBottom: '12px' }}>⚠️</div>
+          <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>生成失败</p>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '20px' }}>{error || '请返回重试'}</p>
+          <button onClick={() => window.history.back()} className="btn-primary">返回重试</button>
         </div>
       </main>
     );
   }
 
-  const { name, bazi, naYin, shishen, lunarDate, zodiac, wuxing, insights, bloodType, bloodTypeData, intent } = report;
-
-  const intentConfig: Record<string, { icon: string; label: string }> = {
-    health: { icon: '🌿', label: 'Body & Energy Focus' },
-    career: { icon: '🧭', label: 'Life Direction Focus' },
-    relationship: { icon: '💞', label: 'Relationships Focus' },
-  };
-  const activeIntent = intentConfig[intent as string] || intentConfig.health;
-  const wellnessPlan = getWellnessPlan(wuxing.weakest);
-  const dayLabel = ['年柱','月柱','日柱','时柱'];
+  const { name, bazi, naYin, shishen, lunarDate, zodiac, wuxing, insights, bloodType, bloodTypeData, aiSections } = report;
   const baziKeys = ['year', 'month', 'day', 'hour'] as const;
+  const dayLabel = ['年柱', '月柱', '日柱', '时柱'];
 
-  // 五行相生相克关系
-  const wuxingRelations: Record<string, { generates: string; controlledBy: string }> = {
-    '木': { generates: '火', controlledBy: '金' },
-    '火': { generates: '土', controlledBy: '水' },
-    '土': { generates: '金', controlledBy: '木' },
-    '金': { generates: '水', controlledBy: '火' },
-    '水': { generates: '木', controlledBy: '土' }
-  };
+  // 五行相生成
+  const wuxingCycle: Record<string, string> = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' };
 
   return (
-    <main className="bg-[#0D0D15] text-[#F5F5F7]">
-      {/* 第一屏：能量蓝图 */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
-        <div className="text-xs text-[#636366] mb-2 tracking-widest uppercase font-semibold">Energy Blueprint</div>
-        <h2 className="text-5xl font-bold text-[#C9A96E] mb-6">Your Five Elements</h2>
-        <p className="text-lg text-[#A1A1A6] mb-2">{zodiac} · {lunarDate}</p>
-        <p className="text-sm text-[#636366] mb-2">Welcome, {name}</p>
-        <div className="mb-12 inline-block bg-[#C9A96E]/10 border border-[#C9A96E]/20 rounded-full px-4 py-1.5 text-xs text-[#C9A96E]">
-          {activeIntent.icon} {activeIntent.label}
+    <main style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 16px 48px' }}>
+        {/* 页头 */}
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '4px' }}>
+            灵枢 · 五行能量报告
+          </p>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+            {name} · {zodiac} · {lunarDate}
+          </p>
         </div>
 
-        {/* 五行能量条 - 改进版 */}
-        <div className="w-full max-w-2xl space-y-6 mb-12">
-          {Object.entries(wuxing.percentages).map(([element, percentage]: [string, any]) => (
-            <div key={element} className="space-y-2">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <span 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: WUXING_COLORS[element] }}
-                  ></span>
-                  <span className="text-[#F5F5F7] font-medium">{WUXING_NAMES[element]}</span>
+        {/* ====== 第一屏：五行能量图 ====== */}
+        <div className="card-gold" style={{ marginBottom: '12px', textAlign: 'center', padding: '24px 20px' }}>
+          <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
+            {name}的五行能量
+          </p>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '20px' }}>
+            你的八字 · {bazi.year} {bazi.month} {bazi.day} {bazi.hour}
+          </p>
+
+          {/* 五行能量条 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {(Object.entries(wuxing.percentages as Record<string, number>)).map(([element, pct]) => (
+              <div key={element}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: WUXING_COLORS[element], display: 'inline-block' }} />
+                    <span style={{ fontSize: '14px', color: 'var(--color-text-primary)', fontWeight: 500 }}>{element}</span>
+                    {element === wuxing.strongest && <span style={{ fontSize: '11px', color: 'var(--color-warning)' }}>↑ 主</span>}
+                    {element === wuxing.weakest && <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>↓ 弱</span>}
+                  </div>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>{pct}%</span>
                 </div>
-                <span className="text-[#C9A96E] font-bold text-lg">{percentage}%</span>
+                <div style={{ width: '100%', height: '6px', background: 'var(--color-border)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: WUXING_COLORS[element], borderRadius: '3px', transition: 'width 0.8s ease' }} />
+                </div>
               </div>
-              <div className="w-full h-3 bg-[#1A1A2E] rounded-full overflow-hidden border border-[#333]">
-                <div
-                  className="h-full rounded-full transition-all duration-1000"
-                  style={{ width: `${percentage}%`, backgroundColor: WUXING_COLORS[element] }}
-                />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* 五行总结 */}
+          <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--color-border)' }}>
+            <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
+              {wuxing.strongest}元素偏旺，{wuxing.weakest}元素偏弱。{wuxingCycle[wuxing.weakest] ? wuxingCycle[wuxing.weakest] + '生' + wuxing.weakest + '，可以通过补充' + wuxingCycle[wuxing.weakest] + '来平衡' + wuxing.weakest : wuxing.weakest + '元素需要关注平衡'}
+            </p>
+          </div>
         </div>
 
-        {/* 八字柱 - 改进版 */}
-        <div className="mb-8">
-          <p className="text-xs text-[#636366] mb-4 text-center tracking-widest">BaZi Chart (Eight Characters)</p>
-          <div className="flex gap-4 justify-center flex-wrap">
+        {/* ====== 第二屏：八字四柱 ====== */}
+        <div className="card" style={{ marginBottom: '12px', textAlign: 'center' }}>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '14px', letterSpacing: '1px' }}>
+            八字排盘 · 八字四柱
+          </p>
+          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
             {baziKeys.map((key, i) => (
-              <div key={key} className="text-center">
-                <div className="text-xs text-[#636366] mb-2 font-semibold">{dayLabel[i]}</div>
-                <div
-                  className="w-20 h-20 rounded-xl bg-[#1A1A2E] flex flex-col items-center justify-center border-2 transition hover:border-[#C9A96E]"
-                  style={{ borderColor: WUXING_COLORS[wuxing.strongest] }}
-                >
-                  <div className="text-xl font-bold text-[#F5F5F7]">{bazi[key]}</div>
-                  <div className="text-xs text-[#C9A96E] mt-1">{shishen[key]}</div>
-                </div>
+              <div
+                key={key}
+                style={{
+                  flex: 1,
+                  padding: '12px 8px',
+                  background: 'var(--color-bg)',
+                  borderRadius: '10px',
+                  border: `1.5px solid ${WUXING_COLORS[wuxing.strongest]}30`,
+                }}
+              >
+                <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{dayLabel[i]}</p>
+                <p style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>{bazi[key]}</p>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{shishen[key]}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '12px', lineHeight: 1.4 }}>
+            纳音 · {naYin}
+          </p>
+        </div>
+
+        {/* ====== 第三屏：内在能量解读（AI） ====== */}
+        <div style={{ marginBottom: '12px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px', textAlign: 'center', letterSpacing: '1px' }}>
+            内在能量解读
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {(aiSections && aiSections.length >= 3 ? aiSections : (insights || [])).slice(0, 3).map((text: string, i: number) => (
+              <div key={i} className="card" style={{ padding: '16px 20px', borderLeft: `3px solid ${i === 0 ? WUXING_COLORS[wuxing.strongest] : i === 1 ? WUXING_COLORS[wuxing.weakest] : 'var(--color-gold)'}` }}>
+                <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', lineHeight: 1.6 }}>{text}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* 能量总结 */}
-        <div className="text-center bg-[#1A1A2E] rounded-xl p-6 border-l-4 border-[#C9A96E] max-w-lg">
-          <p className="text-[#F5F5F7] leading-relaxed">
-            Dominant <span className="text-[#C9A96E] font-bold">{WUXING_NAMES[wuxing.strongest]}</span> · 
-            Needs more <span className="text-[#C9A96E] font-bold">{WUXING_NAMES[wuxing.weakest]}</span>
-          </p>
-        </div>
-      </section>
-
-      {/* 第二屏：内在能量 */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-gradient-to-b from-[#0D0D15] to-[#16162A]">
-        <div className="text-xs text-[#636366] mb-2 tracking-widest uppercase font-semibold">Inner Energy</div>
-        <h2 className="text-5xl font-bold text-[#C9A96E] mb-16">How Your Elements Shape You</h2>
-
-        <div className="w-full max-w-3xl space-y-6">
-          {insights.map((text: string, i: number) => (
-            <div key={i} className="bg-[#1A1A2E] rounded-xl p-8 border-l-4 border-[#C9A96E] hover:bg-[#242438] transition">
-              <p className="text-[#F5F5F7] leading-relaxed text-lg">{text}</p>
+        {/* ====== 第四屏：血型分析 ====== */}
+        {bloodType && bloodTypeData && (
+          <div className="card" style={{ marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '20px' }}>🧬</span>
+              <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                血型 {bloodTypeData.bloodType} · {bloodTypeData.fiveElement}元素
+              </p>
             </div>
-          ))}
-        </div>
 
-        {/* 五行相生相克说明 */}
-        <div className="w-full max-w-3xl mt-12 bg-[#1A1A2E] rounded-xl p-8 border border-[#333]">
-          <h3 className="text-[#C9A96E] font-bold mb-4">Five Element Dynamics</h3>
-          <p className="text-[#A1A1A6] text-sm mb-6 leading-relaxed">
-            Your dominant {WUXING_NAMES[wuxing.strongest]} element generates {WUXING_NAMES[wuxingRelations[wuxing.strongest].generates]}, 
-            while your weaker {WUXING_NAMES[wuxing.weakest]} element is controlled by {WUXING_NAMES[wuxingRelations[wuxing.weakest].controlledBy]}. 
-            Balancing these energies is key to your wellbeing.
-          </p>
-        </div>
-      </section>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
+              {bloodTypeData.traits.map((trait: string, i: number) => (
+                <span key={i} style={{ padding: '3px 10px', fontSize: '12px', background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: '20px' }}>
+                  {trait}
+                </span>
+              ))}
+            </div>
 
-      {/* 第三屏：六维调理方案 */}
-      {wellnessPlan && (
-        <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
-          <div className="text-xs text-[#636366] mb-2 tracking-widest uppercase font-semibold">Wellness Plan</div>
-          <h2 className="text-5xl font-bold text-[#C9A96E] mb-4">6-Dimension Wellness</h2>
-          <p className="text-lg text-[#A1A1A6] mb-16">
-            Strengthen your <span className="text-[#C9A96E] font-bold">{WUXING_NAMES[wuxing.weakest]}</span> element
-          </p>
-
-          <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {[
-              { emoji: '🎨', label: 'Wear', value: wellnessPlan.color },
-              { emoji: '🧭', label: 'Direction', value: wellnessPlan.direction },
-              { emoji: '🥗', label: 'Nutrition', value: wellnessPlan.food },
-              { emoji: '🏃', label: 'Movement', value: wellnessPlan.exercise },
-              { emoji: '💆', label: 'Acupoint', value: wellnessPlan.acupoint },
-              { emoji: '😴', label: 'Rest', value: wellnessPlan.sleep },
-            ].map(item => (
-              <div key={item.label} className="bg-[#1A1A2E] rounded-xl p-6 text-center border border-[#333] hover:border-[#C9A96E] transition">
-                <div className="text-5xl mb-4">{item.emoji}</div>
-                <div className="text-xs text-[#636366] mb-2 font-semibold tracking-widest uppercase">{item.label}</div>
-                <div className="text-[#F5F5F7] text-base font-medium">{item.value}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+              <div style={{ padding: '10px', background: 'var(--color-bg)', borderRadius: '10px' }}>
+                <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '2px' }}>优势</p>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>{bloodTypeData.strength}</p>
               </div>
-            ))}
+              <div style={{ padding: '10px', background: 'var(--color-bg)', borderRadius: '10px' }}>
+                <p style={{ fontSize: '11px', color: 'var(--color-warning)', fontWeight: 600, marginBottom: '2px' }}>注意</p>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>{bloodTypeData.weakness}</p>
+              </div>
+            </div>
+
+            {bloodTypeData.combinedAdvice && (
+              <div style={{ padding: '12px', background: 'var(--color-gold-light)', borderRadius: '10px', borderLeft: '3px solid var(--color-gold)' }}>
+                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-gold)', marginBottom: '4px' }}>血型 + 五行</p>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{bloodTypeData.combinedAdvice}</p>
+              </div>
+            )}
           </div>
+        )}
 
-          <div className="w-full max-w-3xl bg-[#1A1A2E] rounded-xl p-8 border-l-4 border-[#C9A96E]">
-            <div className="text-sm text-[#C9A96E] mb-3 font-semibold">📜 Classic Wisdom</div>
-            <p className="text-[#F5F5F7] italic leading-relaxed mb-4">{wellnessPlan.classic}</p>
-            <p className="text-base text-[#A1A1A6]">{wellnessPlan.emotion}</p>
-          </div>
-        </section>
-      )}
-
-      {/* 第四屏：血型分析 */}
-      {bloodType && bloodTypeData && (
-        <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-gradient-to-b from-[#0D0D15] to-[#111122]">
-          <div className="text-xs text-[#636366] mb-2 tracking-widest uppercase font-semibold">Personality Profile</div>
-          <h2 className="text-5xl font-bold text-[#C9A96E] mb-6">Blood Type Analysis</h2>
-          <p className="text-lg text-[#A1A1A6] mb-12">Type {bloodType} · Element {bloodTypeData.fiveElement}</p>
-
-          <div className="w-full max-w-4xl">
-            {/* 血型基本信息卡片 */}
-            <div className="bg-[#1A1A2E] rounded-2xl p-8 border border-[#C9A96E]/20 mb-8">
-              <div className="flex items-center gap-4 mb-6">
-                <span className="text-4xl">🧬</span>
-                <div>
-                  <h3 className="text-2xl font-bold text-[#C9A96E]">Type {bloodType} Personality</h3>
-                  <p className="text-sm text-[#636366]">Based on blood type psychology research</p>
-                </div>
-                <span className="ml-auto text-3xl font-bold text-[#C9A96E]/30">{bloodType}</span>
+        {/* ====== 第五屏：六维调理方案 ====== */}
+        {(() => {
+          const wellness = getWellnessPlan(wuxing.weakest);
+          if (!wellness) return null;
+          return (
+            <div style={{ marginBottom: '12px' }}>
+              <div className="card" style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', letterSpacing: '1px', marginBottom: '2px' }}>
+                  六维调理方案
+                </p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                  针对 {wuxing.weakest}元素偏弱的调理建议
+                </p>
               </div>
 
-              {/* 性格标签 */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {bloodTypeData.traits.map((trait: string, i: number) => (
-                  <span key={i} className="px-3 py-1 bg-[#C9A96E]/10 text-[#C9A96E] rounded-full text-sm">
-                    {trait}
-                  </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {[
+                  { icon: '🎨', label: '穿戴', value: wellness.color },
+                  { icon: '🧭', label: '方向', value: wellness.direction },
+                  { icon: '🥗', label: '饮食', value: wellness.food },
+                  { icon: '🏃', label: '运动', value: wellness.exercise },
+                  { icon: '💆', label: '穴位', value: wellness.acupoint },
+                  { icon: '😴', label: '作息', value: wellness.sleep },
+                ].map((item) => (
+                  <div key={item.label} className="card" style={{ padding: '14px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', marginBottom: '4px' }}>{item.icon}</div>
+                    <p style={{ fontSize: '11px', color: 'var(--color-text-muted)', letterSpacing: '1px', marginBottom: '2px' }}>{item.label}</p>
+                    <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', lineHeight: 1.4, fontWeight: 500 }}>{item.value}</p>
+                  </div>
                 ))}
               </div>
 
-              {/* 四宫格详情 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-[#0D0D15]/50 p-4 rounded-xl">
-                  <div className="text-xs text-[#636366] mb-1">💪 Strengths</div>
-                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.strength}</p>
-                </div>
-                <div className="bg-[#0D0D15]/50 p-4 rounded-xl">
-                  <div className="text-xs text-[#636366] mb-1">⚠️ Watch Out</div>
-                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.weakness}</p>
-                </div>
-                <div className="bg-[#0D0D15]/50 p-4 rounded-xl">
-                  <div className="text-xs text-[#636366] mb-1">💼 Work Style</div>
-                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.workStyle}</p>
-                </div>
-                <div className="bg-[#0D0D15]/50 p-4 rounded-xl">
-                  <div className="text-xs text-[#636366] mb-1">💕 Love Style</div>
-                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.loveStyle}</p>
-                </div>
+              <div className="card" style={{ marginTop: '8px', borderLeft: '3px solid var(--color-gold)' }}>
+                <p style={{ fontSize: '12px', color: 'var(--color-gold)', fontWeight: 600, marginBottom: '4px' }}>📜 典籍智慧</p>
+                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.6, fontStyle: 'italic' }}>{wellness.classic}</p>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-primary)', marginTop: '8px', lineHeight: 1.5 }}>{wellness.emotion}</p>
               </div>
-
-              {/* 健康与沟通 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-[#0D0D15]/50 p-4 rounded-xl border-l-2 border-green-500/50">
-                  <div className="text-xs text-green-400 mb-1">🏥 Health Tendency</div>
-                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.healthTendency}</p>
-                </div>
-                <div className="bg-[#0D0D15]/50 p-4 rounded-xl border-l-2 border-blue-500/50">
-                  <div className="text-xs text-blue-400 mb-1">💬 Communication</div>
-                  <p className="text-[#F5F5F7] text-sm">{bloodTypeData.communication}</p>
-                </div>
-              </div>
-
-              {/* 五行联动建议 */}
-              {bloodTypeData.combinedAdvice && (
-                <div className="bg-gradient-to-r from-[#C9A96E]/10 to-transparent p-5 rounded-xl border-l-4 border-[#C9A96E]">
-                  <div className="text-sm text-[#C9A96E] font-semibold mb-2">💡 Blood Type + Five Elements</div>
-                  <p className="text-[#F5F5F7] text-sm leading-relaxed">{bloodTypeData.combinedAdvice}</p>
-                </div>
-              )}
             </div>
-          </div>
-        </section>
-      )}
+          );
+        })()}
 
-      {/* 第五屏：每日能量 */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-gradient-to-b from-[#0D0D15] to-[#16162A]">
-        <div className="text-xs text-[#636366] mb-2 tracking-widest uppercase font-semibold">Daily Energy</div>
-        <h2 className="text-5xl font-bold text-[#C9A96E] mb-16">Today&apos;s Practice</h2>
+        {/* ====== 第六屏：每日练习 ====== */}
+        {(() => {
+          const wellness = getWellnessPlan(wuxing.weakest);
+          if (!wellness) return null;
+          return (
+            <div style={{ marginBottom: '12px' }}>
+              <div className="card" style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', letterSpacing: '1px', marginBottom: '2px' }}>
+                  今日练习
+                </p>
+                <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                  今天可以做这 4 件事
+                </p>
+              </div>
 
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* DO */}
-          <div className="bg-[#1A1A2E] rounded-xl p-8 border-l-4 border-green-500">
-            <div className="text-lg text-green-400 mb-6 font-bold">✅ DO</div>
-            <ul className="space-y-4 text-[#F5F5F7]">
-              <li className="flex gap-3">
-                <span className="text-green-400 font-bold">•</span>
-                <span>Wear <span className="text-[#C9A96E]">{wellnessPlan?.color || 'balancing colors'}</span></span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-green-400 font-bold">•</span>
-                <span>Face <span className="text-[#C9A96E]">{wellnessPlan?.direction || 'your auspicious direction'}</span></span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-green-400 font-bold">•</span>
-                <span>Eat <span className="text-[#C9A96E]">{wellnessPlan?.food || 'nourishing foods'}</span></span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-green-400 font-bold">•</span>
-                <span>Practice <span className="text-[#C9A96E]">{wellnessPlan?.exercise || 'gentle movement'}</span></span>
-              </li>
-            </ul>
-          </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div className="card" style={{ borderLeft: '3px solid var(--color-success)', padding: '14px' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '4px' }}>✅ 穿着</p>
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{wellness.color}</p>
+                </div>
+                <div className="card" style={{ borderLeft: '3px solid var(--color-success)', padding: '14px' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '4px' }}>✅ 朝向</p>
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>面朝{wellness.direction}</p>
+                </div>
+                <div className="card" style={{ borderLeft: '3px solid var(--color-success)', padding: '14px' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '4px' }}>✅ 多吃</p>
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{wellness.food.split(',')[0]}</p>
+                </div>
+                <div className="card" style={{ borderLeft: '3px solid var(--color-success)', padding: '14px' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 600, marginBottom: '4px' }}>✅ 运动</p>
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{wellness.exercise.split(',')[0]}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
-          {/* AVOID */}
-          <div className="bg-[#1A1A2E] rounded-xl p-8 border-l-4 border-red-500">
-            <div className="text-lg text-red-400 mb-6 font-bold">❌ AVOID</div>
-            <ul className="space-y-4 text-[#F5F5F7]">
-              <li className="flex gap-3">
-                <span className="text-red-400 font-bold">•</span>
-                <span>Overexertion when energy is low</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-red-400 font-bold">•</span>
-                <span>Late nights (drains <span className="text-[#C9A96E]">{WUXING_NAMES[wuxing.weakest]}</span> energy)</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-red-400 font-bold">•</span>
-                <span>Cold/raw foods in excess</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-red-400 font-bold">•</span>
-                <span>Rushing major decisions today</span>
-              </li>
-            </ul>
-          </div>
+        {/* ====== 第七屏：付费墙 ====== */}
+        <div className="card" style={{ marginBottom: '12px', textAlign: 'center', padding: '24px 20px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
+            以上就是你的免费报告内容
+          </p>
+          <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', fontWeight: 600, marginBottom: '16px' }}>
+            解锁完整深度分析，获得持续跟踪与个性化建议
+          </p>
+          <button
+            className="btn-primary"
+            style={{ width: '100%' }}
+          >
+            深度分析 ¥69
+          </button>
+          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '8px' }}>
+            包含 DeepSeek AI 深度解读 + 七日跟踪 + PDF 报告
+          </p>
         </div>
-      </section>
 
-      {/* 第五屏：付费墙 */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20 bg-[#0D0D15]">
-        <Paywall reportId={report?.id} userName={report?.name} />
-      </section>
-    </main>
-  );
-}
-
-function ReportLoading() {
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-[#0D0D15]">
-      <div className="text-center">
-        <div className="text-2xl text-[#C9A96E] mb-4 font-bold">Consulting the Oracle...</div>
-        <div className="flex items-center justify-center gap-2">
-          <div className="w-2 h-2 bg-[#C9A96E] rounded-full animate-pulse"></div>
-          <div className="text-[#A1A1A6]">Decoding your energy pattern</div>
-          <div className="w-2 h-2 bg-[#C9A96E] rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
+        {/* 页脚 */}
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            灵枢 · 你的能量模式已经告诉了我答案
+          </p>
         </div>
       </div>
     </main>
@@ -386,7 +334,11 @@ function ReportLoading() {
 
 export default function ReportPage() {
   return (
-    <Suspense fallback={<ReportLoading />}>
+    <Suspense fallback={
+      <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: 'var(--color-text-muted)' }}>加载中...</p>
+      </main>
+    }>
       <ReportContent />
     </Suspense>
   );
