@@ -14,6 +14,7 @@ export default function Home() {
     birthMinute: "0",
     gender: "male",
     bloodType: "",
+    intent: "health",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -43,6 +44,7 @@ export default function Home() {
         hour: formData.birthHour || "",
         gender: formData.gender,
         bloodType: formData.bloodType || "",
+        intent: formData.intent || "health",
       });
       router.push(`/report?${params.toString()}`);
     } catch (err) {
@@ -97,7 +99,7 @@ export default function Home() {
       </section>
 
       {/* ==================== 三大入口 ==================== */}
-      <section className="py-28 px-6 bg-gradient-to-b from-[#0D0D15] to-[#111122]">
+      <section id="three-dimensions" className="py-28 px-6 bg-gradient-to-b from-[#0D0D15] to-[#111122]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <div className="text-xs text-[#636366] mb-3 tracking-[0.2em] uppercase font-semibold">
@@ -115,9 +117,13 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-6">
             {/* 身体状态 */}
             <div
-              onClick={() => document.getElementById("form-section")?.scrollIntoView({ behavior: "smooth" })}
-              className="group bg-[#1A1A2E] rounded-2xl p-8 border border-[#333] hover:border-[#C9A96E] transition cursor-pointer hover:-translate-y-1 duration-300"
+              onClick={() => {
+                setFormData(prev => ({ ...prev, intent: "health" }));
+                document.getElementById("form-section")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="group bg-[#1A1A2E] rounded-2xl p-8 border border-[#333] hover:border-[#C9A96E] transition cursor-pointer hover:-translate-y-1 duration-300 relative"
             >
+              {formData.intent === "health" && <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#C9A96E] rounded-full shadow-lg shadow-[#C9A96E]/50" />}
               <div className="text-4xl mb-4">🌿</div>
               <h3 className="text-2xl font-bold mb-3 text-[#F5F5F7] group-hover:text-[#C9A96E] transition">
                 Body & Energy
@@ -134,9 +140,13 @@ export default function Home() {
 
             {/* 人生方向 */}
             <div
-              onClick={() => document.getElementById("form-section")?.scrollIntoView({ behavior: "smooth" })}
-              className="group bg-[#1A1A2E] rounded-2xl p-8 border border-[#333] hover:border-[#C9A96E] transition cursor-pointer hover:-translate-y-1 duration-300"
+              onClick={() => {
+                setFormData(prev => ({ ...prev, intent: "career" }));
+                document.getElementById("form-section")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="group bg-[#1A1A2E] rounded-2xl p-8 border border-[#333] hover:border-[#C9A96E] transition cursor-pointer hover:-translate-y-1 duration-300 relative"
             >
+              {formData.intent === "career" && <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#C9A96E] rounded-full shadow-lg shadow-[#C9A96E]/50" />}
               <div className="text-4xl mb-4">🧭</div>
               <h3 className="text-2xl font-bold mb-3 text-[#F5F5F7] group-hover:text-[#C9A96E] transition">
                 Life Direction
@@ -153,9 +163,13 @@ export default function Home() {
 
             {/* 情感关系 */}
             <div
-              onClick={() => document.getElementById("form-section")?.scrollIntoView({ behavior: "smooth" })}
-              className="group bg-[#1A1A2E] rounded-2xl p-8 border border-[#333] hover:border-[#C9A96E] transition cursor-pointer hover:-translate-y-1 duration-300"
+              onClick={() => {
+                setFormData(prev => ({ ...prev, intent: "relationship" }));
+                document.getElementById("form-section")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="group bg-[#1A1A2E] rounded-2xl p-8 border border-[#333] hover:border-[#C9A96E] transition cursor-pointer hover:-translate-y-1 duration-300 relative"
             >
+              {formData.intent === "relationship" && <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#C9A96E] rounded-full shadow-lg shadow-[#C9A96E]/50" />}
               <div className="text-4xl mb-4">💞</div>
               <h3 className="text-2xl font-bold mb-3 text-[#F5F5F7] group-hover:text-[#C9A96E] transition">
                 Relationships
@@ -530,6 +544,21 @@ export default function Home() {
             <p className="text-[#A1A1A6] text-sm">
               Free report in under 3 minutes. No account needed.
             </p>
+            {/* intent 指示器 */}
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <span className="text-xs bg-[#C9A96E]/10 text-[#C9A96E] px-3 py-1 rounded-full border border-[#C9A96E]/20">
+                {formData.intent === "health" ? "🌿" : formData.intent === "career" ? "🧭" : "💞"}
+                {' '}
+                {formData.intent === "health" ? "Focus: Body & Energy" : formData.intent === "career" ? "Focus: Life Direction" : "Focus: Relationships"}
+              </span>
+              <button
+                type="button"
+                onClick={() => document.getElementById("three-dimensions")?.scrollIntoView({ behavior: "smooth" })}
+                className="text-xs text-[#636366] hover:text-[#C9A96E] transition underline"
+              >
+                Change
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">

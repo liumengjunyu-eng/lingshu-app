@@ -20,8 +20,12 @@ function ReportContent() {
       const hour = parseInt(searchParams.get("hour") || "12");
       const gender = searchParams.get("gender") || "male";
       const bloodType = searchParams.get("bloodType") || "";
+      const intent = searchParams.get("intent") || "health";
 
-      const reportData = generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender, bloodType });
+      const reportData = {
+        ...generateReport({ name, birthYear: year, birthMonth: month, birthDay: day, birthHour: hour, gender, bloodType }),
+        intent,
+      };
       setReport(reportData);
     } catch (e: any) {
       setError("Failed to generate report: " + (e?.message || "Unknown error"));
@@ -62,7 +66,14 @@ function ReportContent() {
     );
   }
 
-  const { name, bazi, naYin, shishen, lunarDate, zodiac, wuxing, insights, bloodType, bloodTypeData } = report;
+  const { name, bazi, naYin, shishen, lunarDate, zodiac, wuxing, insights, bloodType, bloodTypeData, intent } = report;
+
+  const intentConfig: Record<string, { icon: string; label: string }> = {
+    health: { icon: '🌿', label: 'Body & Energy Focus' },
+    career: { icon: '🧭', label: 'Life Direction Focus' },
+    relationship: { icon: '💞', label: 'Relationships Focus' },
+  };
+  const activeIntent = intentConfig[intent as string] || intentConfig.health;
   const wellnessPlan = getWellnessPlan(wuxing.weakest);
   const dayLabel = ['年柱','月柱','日柱','时柱'];
   const baziKeys = ['year', 'month', 'day', 'hour'] as const;
@@ -83,7 +94,10 @@ function ReportContent() {
         <div className="text-xs text-[#636366] mb-2 tracking-widest uppercase font-semibold">Energy Blueprint</div>
         <h2 className="text-5xl font-bold text-[#C9A96E] mb-6">Your Five Elements</h2>
         <p className="text-lg text-[#A1A1A6] mb-2">{zodiac} · {lunarDate}</p>
-        <p className="text-sm text-[#636366] mb-12">Welcome, {name}</p>
+        <p className="text-sm text-[#636366] mb-2">Welcome, {name}</p>
+        <div className="mb-12 inline-block bg-[#C9A96E]/10 border border-[#C9A96E]/20 rounded-full px-4 py-1.5 text-xs text-[#C9A96E]">
+          {activeIntent.icon} {activeIntent.label}
+        </div>
 
         {/* 五行能量条 - 改进版 */}
         <div className="w-full max-w-2xl space-y-6 mb-12">
