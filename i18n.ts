@@ -13,7 +13,9 @@ export const localeNames = {
 };
 
 export default getRequestConfig(async ({ locale }) => {
+  const safeLocale = locales.includes(locale as any) ? locale : defaultLocale;
   return {
-    messages: (await import(`./messages/${locale}.json`)).default,
+    locale: safeLocale,
+    messages: (await import(`./messages/${safeLocale}.json`)).default,
   };
 });
