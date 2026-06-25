@@ -56,6 +56,25 @@ export default function DiagnosePage() {
  const [loading, setLoading] = useState(false);
  const [primaryIssue, setPrimaryIssue] = useState<PrimaryIssue | null>(null);
  const [followUpChoice, setFollowUpChoice] = useState<FollowUpChoice | null>(null);
+ const [progressStep, setProgressStep] = useState(0);
+
+ const PROGRESS_STEPS = [
+ '正在分析恢复状态...',
+ '正在识别行为模式...',
+ '正在匹配人格原型...',
+ '正在生成观察指标...',
+ ];
+
+ useEffect(() => {
+ if (!loading) {
+ setProgressStep(0);
+ return;
+ }
+ const interval = setInterval(() => {
+ setProgressStep((prev) => (prev < PROGRESS_STEPS.length - 1 ? prev + 1 : prev));
+ }, 600);
+ return () => clearInterval(interval);
+ }, [loading]);
 
  const handleIssueSelect = (issue: PrimaryIssue) => {
  setPrimaryIssue(issue);
@@ -95,9 +114,28 @@ export default function DiagnosePage() {
  if (loading) {
  return (
  <main style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
- <div style={{ textAlign: 'center' }}>
- <div style={{ fontSize: '28px', marginBottom: '12px' }}>🔮</div>
- <p style={{ color: 'var(--color-text-primary)', fontSize: '16px' }}>正在分析你的状态...</p>
+ <div style={{ textAlign: 'center', padding: '24px' }}>
+ <div style={{ fontSize: '36px', marginBottom: '20px' }}>🔮</div>
+ <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
+ {PROGRESS_STEPS.map((label, index) => (
+ <div
+ key={index}
+ style={{
+ fontSize: '15px',
+ color: index <= progressStep ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+ opacity: index <= progressStep ? 1 : 0.3,
+ transition: 'all 0.3s ease',
+ display: 'flex',
+ alignItems: 'center',
+ justifyContent: 'center',
+ gap: '8px',
+ }}
+ >
+ <span style={{ display: 'inline-block', width: '16px' }}>{index <= progressStep ? '✓' : '○'}</span>
+ <span>{label}</span>
+ </div>
+ ))}
+ </div>
  </div>
  </main>
  );
