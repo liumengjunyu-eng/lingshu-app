@@ -92,6 +92,16 @@ function ResultContent() {
             View Path &rarr;
           </Link>
         </div>
+
+        <div className="mt-10 pt-8 border-t border-forest/5">
+          <Link
+            href="/lifegraph"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-forest/10 rounded-full text-sm text-ink/40 hover:text-ink/70 hover:border-forest/30 transition-all duration-300"
+          >
+            <span className="text-forest">D</span>
+            Track Your Energy Over Time &rarr;
+          </Link>
+        </div>
       </div>
     </main>
   );

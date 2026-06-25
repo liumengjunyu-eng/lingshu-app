@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { EmotionType } from '@/lib/inference/types';
+import { createInitialNode } from '@/lib/lifegraph';
 
 // 5题答案 → Symbol Engine 输入翻译
 const ISSUE_TO_ENGINE: Record<string, { fatigueLevel: number; stressLevel: number; sleepQuality: number; motivation: number; digestion: number; socialLoad: number }> = {
@@ -145,6 +146,11 @@ export default function DiagnosePage() {
         followUpChoice,
       };
       localStorage.setItem('diagnosis_result', JSON.stringify(symbolData));
+
+      // Initialize Life Graph
+      const sid = crypto.randomUUID ? crypto.randomUUID() : `s_${Date.now()}`;
+      createInitialNode(sid, { score: avg, type });
+
       router.push(`/result?score=${avg}&type=${type}`);
     } catch (error) {
       console.error('[Diagnosis error]', error);
