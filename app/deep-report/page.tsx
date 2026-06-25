@@ -241,7 +241,7 @@ export default function DeepReportPage() {
 
           {/* Mirror line */}
           <p style={{ fontFamily: "'Noto Serif SC', Georgia, serif", fontSize: '16px', fontStyle: 'italic', color: '#5C5C5C', textAlign: 'center', lineHeight: 1.6 }}>
-            &ldquo;{report.hook.text}&rdquo;
+            &ldquo;{report.hook?.text || diagnose?.insights?.[0] || 'Your energy pattern reveals what words cannot express.'}&rdquo;
           </p>
         </Section>
 

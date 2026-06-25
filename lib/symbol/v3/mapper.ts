@@ -83,19 +83,23 @@ export function loadDiagnoseResult(): DiagnoseResult | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
 
-    // The diagnose API returns: { data: { persona, element, energy, recovery, stress, recoveryLevel, insights, emotion } }
-    // But diagnosed page saves: { engineInput, diagnoseResult: { ...data, emotion }, primaryIssue, followUpChoice }
+    // diagnose/page.tsx saves: { engineInput, diagnoseResult: { persona, element, emotion, insights, energy, recovery, stress, recoveryLevel }, primaryIssue, followUpChoice }
+    // Note: API returns { data: {...} }, but diagnose page spreads data.data into diagnoseResult
     if (parsed.primaryIssue && parsed.followUpChoice && parsed.diagnoseResult) {
+      const dr = parsed.diagnoseResult;
       return {
         primaryIssue: parsed.primaryIssue,
         followUpChoice: parsed.followUpChoice,
-        emotion: parsed.diagnoseResult.emotion || '',
-        persona: { persona: parsed.diagnoseResult.persona || 'Balanced', element: parsed.diagnoseResult.element || 'Earth' },
-        energy: parsed.diagnoseResult.energy || 5,
-        recovery: parsed.diagnoseResult.recovery || 5,
-        stress: parsed.diagnoseResult.stress || 5,
-        recoveryLevel: parsed.diagnoseResult.recoveryLevel || 'medium',
-        insights: parsed.diagnoseResult.insights || [],
+        emotion: dr.emotion || '',
+        persona: { 
+          persona: dr.persona || 'Balanced', 
+          element: dr.element || 'Earth' 
+        },
+        energy: dr.energy ?? 5,
+        recovery: dr.recovery ?? 5,
+        stress: dr.stress ?? 5,
+        recoveryLevel: dr.recoveryLevel || 'medium',
+        insights: dr.insights || [],
       };
     }
 
