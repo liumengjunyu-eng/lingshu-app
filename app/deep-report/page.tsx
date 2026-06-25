@@ -83,7 +83,7 @@ export default function DeepReportPage() {
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const sid = sessionId();
+  const [sid, setSid] = useState<string>('');
 
   const DOMAINS: { key: DecisionDomain; label: string; icon: string }[] = [
     { key: 'career', label: 'Career', icon: '💼' },
@@ -94,7 +94,10 @@ export default function DeepReportPage() {
   ];
 
   useEffect(() => {
-    captureSignal(sid, 'result_view');
+    // Initialize session ID on client only
+    const id = sessionId();
+    setSid(id);
+    captureSignal(id, 'result_view');
 
     try {
       const dr = loadDiagnoseResult();
@@ -111,7 +114,7 @@ export default function DeepReportPage() {
 
       // Generate deep report
       const snap = createSnapshot(sym);
-      const mem = getMemory(sid);
+      const mem = getMemory(id);
       const rep = generateDeepReport(sym, snap, mem);
       setReport(rep);
 
@@ -120,9 +123,9 @@ export default function DeepReportPage() {
       setEvolution(evo);
 
       // Save memory
-      saveSnapshot(sid, snap);
+      saveSnapshot(id, snap);
 
-      captureSignal(sid, 'report_generate');
+      captureSignal(id, 'report_generate');
 
       // Small delay for animation
       setTimeout(() => setState('ready'), 300);
