@@ -130,14 +130,22 @@ export default function DiagnosePage() {
 
       const engineKey = `${primaryIssue}_${followUpChoice}`;
       const engineInput = ISSUE_TO_ENGINE[engineKey];
-      const symbolData = { 
-        engineInput, 
+
+      // Compute score and type for /result
+      const avg = engineInput
+        ? Math.round((engineInput.fatigueLevel + engineInput.stressLevel + (100 - engineInput.sleepQuality) + (100 - engineInput.motivation) + engineInput.socialLoad) / 5)
+        : 50;
+      const typeMap: Record<string, string> = { sleep: 'performer', anxiety: 'performer', direction: 'drifter', relationship: 'performer', energy: 'drifter' };
+      const type = typeMap[primaryIssue] || 'performer';
+
+      const symbolData = {
+        engineInput,
         diagnoseResult: { ...data.data, emotion: emo },
         primaryIssue,
         followUpChoice,
       };
       localStorage.setItem('diagnosis_result', JSON.stringify(symbolData));
-      router.push('/deep-report');
+      router.push(`/result?score=${avg}&type=${type}`);
     } catch (error) {
       console.error('[Diagnosis error]', error);
       alert('Diagnosis failed. Please try again.');
