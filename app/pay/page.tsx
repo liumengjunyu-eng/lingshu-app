@@ -1,23 +1,52 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { loadState, saveState } from '@/lib/state';
+import { useState } from 'react';
+import { useAppState } from '@/lib/state';
 
 export default function PayPage() {
   const router = useRouter();
+  const { state, updateState, ready } = useAppState();
+  const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
-  const handleUnlock = () => {
-    const state = loadState();
-    const newState = {
-      ...state,
-      premium: {
-        isPremium: true,
-        purchasedAt: Date.now(),
-      },
-    };
-    saveState(newState);
-    router.push('/recovery');
+  const handleUnlock = async () => {
+    setLoading(true);
+
+    try {
+      await new Promise((r) => setTimeout(r, 400));
+
+      updateState({
+        premium: {
+          isPremium: true,
+          purchasedAt: Date.now(),
+        },
+      });
+
+      setShowToast(true);
+      setTimeout(() => {
+        router.push('/recovery');
+      }, 600);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (!ready) {
+    return (
+      <main style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '40px 20px' }}>
+        <div style={{ maxWidth: '440px', margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ color: 'var(--color-text-muted)' }}>加载中...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // 已付费用户直接跳转
+  if (state.premium.isPremium) {
+    router.push('/recovery');
+    return null;
+  }
 
   return (
     <main style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '40px 20px' }}>
@@ -75,14 +104,39 @@ export default function PayPage() {
 
         <button
           onClick={handleUnlock}
+          disabled={loading}
           className="btn-primary"
-          style={{ marginTop: '24px' }}
+          style={{
+            marginTop: '24px',
+            opacity: loading ? 0.6 : 1,
+          }}
         >
-          解锁完整系统 · ¥69
+          {loading ? '处理中...' : '解锁完整系统 · ¥69'}
         </button>
         <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', textAlign: 'center', marginTop: '12px' }}>
           一次购买，永久使用
         </p>
+
+        {/* Toast */}
+        {showToast && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '40px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'var(--color-primary)',
+              color: '#fff',
+              padding: '12px 24px',
+              borderRadius: '12px',
+              fontSize: '14px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+            }}
+          >
+            ✅ 解锁成功！即将跳转...
+          </div>
+        )}
       </div>
     </main>
   );
