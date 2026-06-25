@@ -323,7 +323,7 @@ export default function DeepReportPage() {
       });
       setBazi(baziResult);
       setMode('full');
-      captureSignal(sid, 'full_report_generate');
+      captureSignal(sid, 'report_generate');
     } catch (e) {
       console.error('[Bazi calculation error]', e);
       alert('Failed to calculate Bazi. Please check your birth information.');
