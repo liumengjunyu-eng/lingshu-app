@@ -1,5 +1,9 @@
 /* app/globals.css */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ============================================================
  设计令牌（Design Tokens）
  ============================================================ */
