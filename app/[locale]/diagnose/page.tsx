@@ -145,10 +145,11 @@ export default function DiagnosePage() {
   }
 
   return (
-    <main className="relative" style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
-      <div className="absolute top-6 right-6 z-10">
+    <main className="relative" style={{ minHeight: '100vh', background: 'var(--color-bg)', padding: '24px 20px' }}>
+      <div className="absolute top-6 right-6 z-50">
         <LanguageSwitcher />
       </div>
+      <div style={{ minHeight: 'calc(100vh - 48px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ maxWidth: '420px', width: '100%' }}>
         {/* Progress */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginBottom: '28px' }}>
@@ -255,6 +256,7 @@ export default function DiagnosePage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </main>
   );
