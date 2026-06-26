@@ -551,6 +551,21 @@ export default function Result() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Ω: Reality Interpretation Layer */}
+                  <div className="mt-2 text-center">
+                    <div className="p-1.5 border border-white/[0.01] rounded-xl bg-white/[0.002]">
+                      <p className="text-[8px] text-white/10">
+                        Reality interpretation engine active
+                      </p>
+                      <p className="text-[#C4A862] text-[9px] mt-1">
+                        Your perception is being updated in real time
+                      </p>
+                      <p className="text-white/[0.07] text-[8px] mt-0.5">
+                        Probability of reinterpretation: 0.78
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
