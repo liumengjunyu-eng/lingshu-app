@@ -6,6 +6,7 @@ export interface SessionData {
  texts: string[];
  score: number;
  timestamp: number;
+ profile?: any;
 }
 
 export function saveSession(data: SessionData): void {

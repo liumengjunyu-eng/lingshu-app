@@ -3,73 +3,79 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from '@/lib/core/session';
-
-const SHARE_SENTENCES = [
- "I didn't realize I was compensating until I saw the system map.",
- 'My system is running on borrowed recovery.',
- 'The diagnosis: high output, low restoration.',
- 'I thought I was fine. My system disagreed.',
- 'Recovery debt is real. I just checked mine.',
-];
+import { buildCognitiveState } from '@/lib/v4/cognitiveEngine';
+import { generateShareReport } from '@/lib/v4/reportGenerator';
 
 export default function SharePage() {
  const router = useRouter();
- const [state, setState] = useState<{ score: number; label: string } | null>(null);
- const [sentence, setSentence] = useState('');
+ const [state, setState] = useState<{ label: string; score: number; sentence: string; fullReport: string } | null>(
+ null
+ );
+ const [loaded, setLoaded] = useState(false);
 
  useEffect(() => {
  const session = getSession();
  if (session) {
- const score = session.score;
- setState({
- score,
- label: score > 70 ? 'Compensated Collapse State' : 'Delayed Stabilization Pattern',
- });
+ const cognitive = buildCognitiveState(session.answers);
+ const report = generateShareReport(cognitive);
+ setState(report);
  }
- setSentence(SHARE_SENTENCES[Math.floor(Math.random() * SHARE_SENTENCES.length)]);
+ setLoaded(true);
  }, []);
 
- if (!state) {
+ if (!loaded) {
  return (
- <main className="min-h-screen bg-bg flex items-center justify-center px-6">
+ <main className="min-h-screen bg-bg flex items-center justify-center">
  <div className="text-white/20 text-meta">Loading...</div>
  </main>
  );
  }
 
- const shareText = `
-SYSTEM REPORT
-Type: ${state.label}
-Load Index: ${state.score}
-
-"${sentence}"
-
-→ Test yours: linglife.vercel.app
-`;
+ if (!state) {
+ return (
+ <main className="min-h-screen bg-bg flex items-center justify-center px-6">
+ <div className="text-center">
+ <p className="text-white/40 text-body">No data found.</p>
+ <button
+ onClick={() => router.push('/')}
+ className="mt-4 text-gold text-meta hover:underline"
+ >
+ Start over →
+ </button>
+ </div>
+ </main>
+ );
+ }
 
  return (
  <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
+ {/* 身份卡片 */}
  <div className="max-w-xl w-full border border-white/10 rounded-2xl p-8 animate-fade-up">
- <p className="text-meta text-white/20 tracking-widest uppercase">System Type</p>
- <p className="text-title font-light text-gold mt-1">{state.label}</p>
- <p className="text-meta text-white/20 mt-2">Load Index: {state.score}</p>
+ <p className="text-meta text-white/20 tracking-widest uppercase">System Report</p>
+ <p className="text-title font-light text-gold mt-2">{state.label}</p>
+ <p className="text-meta text-white/20 mt-1">Load Index: {state.score}</p>
 
  <div className="mt-6 pt-6 border-t border-white/5">
  <p className="text-body text-white/40 italic leading-relaxed">
- "{sentence}"
+ &rdquo;{state.sentence}&ldquo;
  </p>
+ </div>
+
+ <div className="mt-4 pt-4 border-t border-white/5">
+ <p className="text-meta text-white/15">linglife.vercel.app</p>
  </div>
  </div>
 
+ {/* 按钮组 */}
  <div className="mt-8 flex flex-col gap-3 w-full max-w-xl">
  <button
  onClick={() => {
- navigator.clipboard.writeText(shareText);
+ navigator.clipboard.writeText(state.fullReport);
  alert('Copied to clipboard!');
  }}
  className="w-full py-3 bg-white/5 border border-white/10 text-white/60 rounded-full hover:border-gold/30 hover:text-white/90 transition text-body"
  >
- Copy Identity
+ Copy System Report
  </button>
 
  <button

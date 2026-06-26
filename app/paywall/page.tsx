@@ -3,44 +3,82 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from '@/lib/core/session';
+import { buildCognitiveState } from '@/lib/v4/cognitiveEngine';
+import { generateLayeredReport } from '@/lib/v4/reportGenerator';
+import { detectConflict, getConflictNarrative } from '@/lib/v4/conflictEngine';
 
 export default function PaywallPage() {
  const router = useRouter();
  const [unlocked, setUnlocked] = useState(false);
- const [score, setScore] = useState<number>(65);
+ const [report, setReport] = useState<any>(null);
+ const [conflict, setConflict] = useState<any>(null);
+ const [loaded, setLoaded] = useState(false);
 
  useEffect(() => {
  const session = getSession();
  if (session) {
- setScore(session.score);
+ const cognitive = buildCognitiveState(session.answers);
+ const layeredReport = generateLayeredReport(cognitive);
+ const conflictSignal = detectConflict(cognitive);
+ setReport(layeredReport);
+ setConflict(conflictSignal);
  }
+ setLoaded(true);
  }, []);
 
- if (unlocked) {
+ if (!loaded) {
+ return (
+ <main className="min-h-screen bg-bg flex items-center justify-center">
+ <div className="text-white/20 text-meta">Loading...</div>
+ </main>
+ );
+ }
+
+ if (unlocked && report) {
  return (
  <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
  <div className="max-w-xl w-full space-y-4 animate-fade-up">
- <h2 className="text-title font-light text-gold text-center">System Breakdown</h2>
+ <h2 className="text-title font-light text-gold text-center">
+ How Your System Evolved Into This State
+ </h2>
 
- <div className="border border-white/5 rounded-xl p-5 space-y-3 bg-white/5">
- <div className="flex justify-between text-body text-white/60">
- <span>System Load</span>
- <span className="text-gold">{score}/100</span>
- </div>
- <div className="flex justify-between text-body text-white/60">
- <span>Recovery Protocol</span>
- <span className="text-white/40">72-hour reset</span>
- </div>
- <div className="flex justify-between text-body text-white/60">
- <span>Primary Imbalance</span>
- <span className="text-white/40">Fire overactive · Water depleted</span>
- </div>
+ {/* Root Cause */}
+ <div className="border border-gold/20 rounded-xl p-6 bg-gold/5">
+ <p className="text-meta text-white/30 uppercase tracking-widest">Root Cause</p>
+ <p className="text-body text-white/70 mt-2 leading-relaxed">
+ {report.tertiary.find((t: any) => t.label === 'Root Cause')?.value ||
+ 'System is in a balanced state'}
+ </p>
  </div>
 
- <div className="border border-gold/20 rounded-xl p-5 bg-gold/5">
- <p className="text-body text-white/70">Recommended</p>
- <p className="text-body text-white/40 mt-1">Sleep reset · Liver regulation · Information load reduction</p>
+ {/* Imbalance Pattern */}
+ <div className="border border-white/5 rounded-xl p-6 space-y-3">
+ <p className="text-meta text-white/30 uppercase tracking-widest">Imbalance Pattern</p>
+ {report.secondary.map((item: any, i: number) => (
+ <div key={i} className="flex justify-between text-body">
+ <span className="text-white/60">{item.label}</span>
+ <span className="text-white/40">{item.value}</span>
  </div>
+ ))}
+ </div>
+
+ {/* Element Pattern */}
+ <div className="border border-white/5 rounded-xl p-6 bg-white/5">
+ <p className="text-meta text-white/30 uppercase tracking-widest">Element Pattern</p>
+ <p className="text-body text-white/60 mt-2">
+ {report.tertiary.find((t: any) => t.label === 'Element Pattern')?.value ||
+ 'Balanced'}
+ </p>
+ </div>
+
+ {/* Conflict Layer */}
+ {conflict && conflict.uncertainty > 30 && (
+ <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02]">
+ <p className="text-meta text-white/15 text-center">
+ {getConflictNarrative(conflict)}
+ </p>
+ </div>
+ )}
 
  <button
  onClick={() => router.push('/share')}
@@ -62,6 +100,10 @@ export default function PaywallPage() {
 
  <p className="text-body text-white/30 mt-4 leading-relaxed">
  The real causes are hidden behind behavioral and systemic feedback loops.
+ <br />
+ <span className="text-white/20 text-meta mt-2 block">
+ Unlock to see how your system evolved into this state.
+ </span>
  </p>
 
  <button
