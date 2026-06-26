@@ -1,102 +1,84 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const SAMPLE_CASES = [
-  'Running on empty',
-  "Can't switch off at night",
-  'Lost my edge',
+const EXAMPLES = [
+ 'Running on empty',
+ "Can't switch off at night",
+ 'Everything feels delayed',
 ];
 
-export default function Home() {
-  const router = useRouter();
-  const [input, setInput] = useState('');
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+export default function HomePage() {
+ const router = useRouter();
+ const [input, setInput] = useState('');
+ const [showCTA, setShowCTA] = useState(false);
 
-  useEffect(() => {
-    // 自动聚焦输入框
-    setTimeout(() => inputRef.current?.focus(), 1200);
-  }, []);
+ useEffect(() => {
+ const timer = setTimeout(() => setShowCTA(true), 1200);
+ return () => clearTimeout(timer);
+ }, []);
 
-  const handleStart = () => {
-    if (!input.trim()) return;
-    router.push(`/diagnose?input=${encodeURIComponent(input)}`);
-  };
+ const handleSubmit = () => {
+ if (input.trim()) {
+ router.push(`/diagnose?input=${encodeURIComponent(input)}`);
+ }
+ };
 
-  const handleSampleClick = (sample: string) => {
-    setInput(sample);
-    // 选案例后自动提交
-    setTimeout(() => {
-      router.push(`/diagnose?input=${encodeURIComponent(sample)}`);
-    }, 300);
-  };
+ return (
+ <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
+ <div className="max-w-xl w-full text-center">
+ {/* 呼吸圆 */}
+ <div className="w-16 h-16 mx-auto rounded-full border border-gold/20 animate-breath mb-8" />
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleStart();
-    }
-  };
+ {/* 主标题 */}
+ <h1 className="text-hero font-light text-white leading-[1.15] tracking-tight">
+ You are not broken.
+ <br />
+ <span className="text-gold">You are just operating beyond your recovery capacity.</span>
+ </h1>
 
-  return (
-    <main className="min-h-screen bg-[#1A1A1A] flex items-center justify-center px-6">
-      <div className="max-w-xl w-full text-center">
-        {/* 光晕（呼吸感 CSS 实现） */}
-        <div className="relative mb-10">
-          <div className="w-24 h-24 mx-auto rounded-full bg-[#C4A862]/10 animate-pulse blur-xl" />
-        </div>
+ {/* 输入框 */}
+ <div className="mt-8 relative">
+ <div className="absolute inset-0 bg-gold/5 blur-2xl rounded-xl" />
+ <textarea
+ value={input}
+ onChange={(e) => setInput(e.target.value)}
+ placeholder="Describe your current state in one sentence."
+ className="relative w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white text-body placeholder:text-white/20 outline-none focus:border-gold/50 transition resize-none min-h-[80px]"
+ onKeyDown={(e) => {
+ if (e.key === 'Enter' && !e.shiftKey) {
+ e.preventDefault();
+ handleSubmit();
+ }
+ }}
+ />
+ </div>
 
-        {/* 核心断言 */}
-        <h1 className="text-3xl md:text-4xl font-light text-white leading-tight">
-          You&apos;re not broken.
-          <br />
-          You&apos;re just running a system
-          <br />
-          that wasn&apos;t designed to sustain.
-        </h1>
+ {/* 案例气泡 */}
+ <div className="mt-4 flex flex-wrap justify-center gap-2">
+ {EXAMPLES.map((text) => (
+ <button
+ key={text}
+ onClick={() => setInput(text)}
+ className="px-4 py-1.5 text-meta text-white/40 border border-white/5 rounded-full hover:border-gold/30 hover:text-white/70 transition"
+ >
+ {text}
+ </button>
+ ))}
+ </div>
 
-        <p className="mt-4 text-white/30 text-sm">
-          Describe your current state. One sentence is fine.
-        </p>
-
-        {/* 输入框 */}
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="e.g. I feel exhausted, unmotivated, and mentally overloaded..."
-          className="mt-8 w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white text-sm min-h-[100px] outline-none focus:border-[#C4A862]/50 transition placeholder:text-white/20 resize-none"
-        />
-
-        {/* CTA */}
-        <button
-          onClick={handleStart}
-          disabled={!input.trim()}
-          className="mt-6 px-8 py-3 bg-[#C4A862] text-[#1A1A1A] rounded-full font-medium hover:opacity-90 transition disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          Analyze My System
-        </button>
-
-        {/* 案例气泡 */}
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          {SAMPLE_CASES.map((sample) => (
-            <button
-              key={sample}
-              onClick={() => handleSampleClick(sample)}
-              className="px-4 py-2 rounded-full border border-white/10 text-xs text-white/30 hover:border-[#C4A862]/30 hover:text-[#C4A862] transition"
-            >
-              {sample}
-            </button>
-          ))}
-        </div>
-
-        {/* 底部信用标识 */}
-        <p className="mt-12 text-xs text-white/10">
-          LingShu · System Pattern Recognition
-        </p>
-      </div>
-    </main>
-  );
+ {/* CTA */}
+ <div className={`mt-8 transition-opacity duration-700 ${showCTA ? 'opacity-100' : 'opacity-0'}`}>
+ <button
+ onClick={handleSubmit}
+ className="w-full py-3 bg-gold text-bg rounded-full font-medium hover:opacity-90 transition text-body"
+ >
+ Analyze My System
+ </button>
+ <p className="text-meta text-white/15 mt-3">Free · 2 minutes</p>
+ </div>
+ </div>
+ </main>
+ );
 }
