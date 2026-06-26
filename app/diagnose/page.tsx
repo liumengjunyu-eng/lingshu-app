@@ -1,123 +1,123 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { runSymbolEngineV2 } from '@/lib/symbol/v2/engine';
-import type { SymptomInput } from '@/lib/symbol/v2/types';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-const QUESTIONS = [
-  {
-    id: 'body',
-    label: 'Your body at the end of a workday…',
-    options: [
-      { value: 80, text: 'Feels like I could run a few more rounds' },
-      { value: 50, text: 'Heavy but functional' },
-      { value: 20, text: "I don't feel it — I just hear it complain" },
-    ],
-  },
-  {
-    id: 'sleep',
-    label: 'When you close your eyes, what happens?',
-    options: [
-      { value: 80, text: "I'm out within minutes" },
-      { value: 50, text: "I lie there for a while, but it's fine" },
-      { value: 20, text: "My brain doesn't stop. I'm still working in my dreams." },
-    ],
-  },
-  {
-    id: 'stress',
-    label: 'How do you handle unexpected pressure?',
-    options: [
-      { value: 80, text: 'I adapt quickly' },
-      { value: 50, text: 'I get tense but manage' },
-      { value: 20, text: 'I freeze internally while looking fine outside' },
-    ],
-  },
-  {
-    id: 'emotion',
-    label: 'After a difficult conversation, you:',
-    options: [
-      { value: 80, text: 'Shake it off in 10 minutes' },
-      { value: 50, text: 'Carry it for a few hours' },
-      { value: 20, text: "Replay it in your head for the rest of the day" },
-    ],
-  },
-  {
-    id: 'focus',
-    label: 'Your typical focus window is:',
-    options: [
-      { value: 80, text: 'I can lock in for hours' },
-      { value: 50, text: '45 minutes, then I need a break' },
-      { value: 20, text: "I'm context-switching all day" },
-    ],
-  },
+const STEPS = [
+ {
+ id: 'body',
+ question: 'Your body after a workday feels like:',
+ options: ['Still capable', 'Tired but manageable', 'Disconnected from physical signals'],
+ },
+ {
+ id: 'energy',
+ question: 'Your energy level right now is:',
+ options: ['Stable', 'Draining', 'Completely depleted'],
+ },
+ {
+ id: 'stress',
+ question: 'Your current stress mode is:',
+ options: ['Situational', 'Constant', 'Numb to it'],
+ },
+ {
+ id: 'recovery',
+ question: 'Your sleep recovery is:',
+ options: ['Solid', 'Interrupted', 'Almost never restores'],
+ },
+ {
+ id: 'focus',
+ question: 'Your focus mode is:',
+ options: ['Sharp', 'Scattered', 'Almost impossible'],
+ },
 ];
 
-export default function Diagnose() {
-  const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+const SCORE_MAP: Record<string, number> = {
+ 'Still capable': 30,
+ 'Tired but manageable': 65,
+ 'Disconnected from physical signals': 85,
+ 'Stable': 25,
+ 'Draining': 60,
+ 'Completely depleted': 90,
+ 'Situational': 30,
+ 'Constant': 65,
+ 'Numb to it': 80,
+ 'Solid': 20,
+ 'Interrupted': 55,
+ 'Almost never restores': 85,
+ 'Sharp': 20,
+ 'Scattered': 60,
+ 'Almost impossible': 85,
+};
 
-  const current = QUESTIONS[step];
-  const isLast = step === QUESTIONS.length - 1;
+export default function DiagnosePage() {
+ const router = useRouter();
+ const searchParams = useSearchParams();
+ const initialInput = searchParams.get('input') || '';
+ const [step, setStep] = useState(0);
+ const [answers, setAnswers] = useState<number[]>([]);
+ const [selectedTexts, setSelectedTexts] = useState<string[]>([]);
 
-  const handleSelect = (value: number) => {
-    const newAnswers = { ...answers, [current.id]: value };
-    setAnswers(newAnswers);
+ const current = STEPS[step];
 
-    if (isLast) {
-      // 映射 answer → SymptomInput
-      const input: SymptomInput = {
-        sleepQuality: newAnswers.sleep ?? 50,
-        energyLevel: newAnswers.body ?? 50,
-        stressLevel: 100 - (newAnswers.stress ?? 50),
-        moodStability: newAnswers.emotion ?? 50,
-        focusLevel: newAnswers.focus ?? 50,
-      };
-      const result = runSymbolEngineV2(input);
-      localStorage.setItem('v2_result', JSON.stringify(result));
-      router.push(`/result?v=2`);
-    } else {
-      setStep(step + 1);
-    }
-  };
+ const selectOption = (text: string) => {
+ const score = SCORE_MAP[text] || 50;
+ const newAnswers = [...answers, score];
+ const newTexts = [...selectedTexts, text];
+ setAnswers(newAnswers);
+ setSelectedTexts(newTexts);
 
-  const progress = ((step + 1) / QUESTIONS.length) * 100;
-  const section = step < 2 ? 'Body' : step < 4 ? 'Mind' : 'System';
+ if (step < STEPS.length - 1) {
+ setTimeout(() => setStep(step + 1), 250);
+ } else {
+ // 完成
+ const avg = newAnswers.reduce((a, b) => a + b, 0) / newAnswers.length;
+ localStorage.setItem('diagnosis_data', JSON.stringify({
+ input: initialInput,
+ answers: newAnswers,
+ texts: newTexts,
+ score: Math.round(avg),
+ }));
+ router.push('/result');
+ }
+ };
 
-  return (
-    <main className="min-h-screen bg-[#1A1A1A] text-white flex items-center justify-center px-6">
-      <div className="max-w-lg w-full">
-        {/* 分段指示器 */}
-        <div className="flex items-center gap-2 mb-8">
-          <div className="h-1 flex-1 rounded-full bg-white/10 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-[#C4A862] transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span className="text-xs text-white/30 min-w-[4rem] text-right">{section}</span>
-        </div>
+ return (
+ <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
+ <div className="max-w-xl w-full">
+ {/* 进度 */}
+ <div className="flex gap-1 mb-6 justify-center">
+ {STEPS.map((_, i) => (
+ <div
+ key={i}
+ className={`h-1 w-8 rounded-full transition-all ${
+ i <= step ? 'bg-gold' : 'bg-white/10'
+ }`}
+ />
+ ))}
+ </div>
 
-        {/* 问题 */}
-        <div key={current.id}>
-          <p className="text-sm text-white/40 mb-2">{step + 1}/{QUESTIONS.length}</p>
-          <h2 className="text-xl font-light leading-snug">{current.label}</h2>
+ <p className="text-meta text-white/20 text-center mb-2">
+ {step + 1} / {STEPS.length}
+ </p>
 
-          <div className="mt-6 space-y-3">
-            {current.options.map((opt) => (
-              <button
-                key={opt.text}
-                onClick={() => handleSelect(opt.value)}
-                className="w-full text-left p-4 rounded-xl border border-white/10 bg-white/5 
-                  hover:border-[#C4A862]/40 hover:bg-[#C4A862]/5 transition text-sm text-white/70"
-              >
-                {opt.text}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
-  );
+ {/* 问题 */}
+ <h2 className="text-title font-light text-white text-center leading-relaxed">
+ {current.question}
+ </h2>
+
+ {/* 选项 */}
+ <div className="mt-6 space-y-2">
+ {current.options.map((opt, i) => (
+ <button
+ key={i}
+ onClick={() => selectOption(opt)}
+ className="w-full p-4 text-body text-white/60 border border-white/5 rounded-xl hover:border-gold/30 hover:text-white/90 transition text-left"
+ >
+ {opt}
+ </button>
+ ))}
+ </div>
+ </div>
+ </main>
+ );
 }
