@@ -1,6 +1,6 @@
 // lib/symbol/v3/index.ts
 // V3 Growth Engine — 统一入口
-// V3.1: + Content Generation Engine + Viral Testing Engine + Distribution Automation
+// V3.2: + Growth Intelligence + Content Mutation + Conversion Attribution
 
 import type { V2Output } from '@/lib/symbol/v2/types';
 import { buildInsight, type InsightOutput } from './insight';
@@ -16,6 +16,11 @@ import {
 import { generateContent, type ContentVariant } from './content';
 import { viralScore, pickBestVariant, type BestVariantResult } from './viral';
 
+// V3.2
+import { calculateGrowthScore, type GrowthScoreResult } from './growth';
+import { mutateContent, mutateHook, type MutatedVariant } from './mutation';
+import { trackConversion, type AttributionEvent } from './attribution';
+
 export interface V3Output {
   insight: InsightOutput;
   narrative: NarrativeOutput;
@@ -24,6 +29,9 @@ export interface V3Output {
   content: ContentVariant;
   bestPick: BestVariantResult;
   distribution: DistributionPayload;
+  // V3.2
+  mutations: MutatedVariant[];
+  hookMutations: MutatedVariant[];
 }
 
 export function runV3Engine(v2: V2Output): V3Output {
@@ -32,19 +40,21 @@ export function runV3Engine(v2: V2Output): V3Output {
   const share = generateSharePayload(v2, narrative, insight);
   const studio = buildContentStudio(v2, narrative, insight);
 
-  // V3.1 additions
+  // V3.1
   const content = generateContent(v2);
   const variants = [
     { id: 'hook', text: content.short_hook, platform: 'hook' as const },
     { id: 'tweet', text: content.tweet, platform: 'twitter' as const },
     { id: 'tiktok', text: content.tiktok_script, platform: 'tiktok' as const },
-    { id: 'threads', text: content.long_form, platform: 'threads' as const },
-    { id: 'linkedin', text: content.long_form, platform: 'linkedin' as const },
   ];
   const bestPick = pickBestVariant(variants);
   const distribution = buildDistribution(content, bestPick);
 
-  return { insight, narrative, share, studio, content, bestPick, distribution };
+  // V3.2
+  const mutations = mutateContent(content.short_hook);
+  const hookMutations = mutateHook(content.short_hook);
+
+  return { insight, narrative, share, studio, content, bestPick, distribution, mutations, hookMutations };
 }
 
 export {
@@ -56,6 +66,11 @@ export {
   viralScore,
   pickBestVariant,
   buildDistribution,
+  // V3.2
+  calculateGrowthScore,
+  mutateContent,
+  mutateHook,
+  trackConversion,
 };
 export type {
   InsightOutput,
@@ -65,4 +80,8 @@ export type {
   ContentVariant,
   BestVariantResult,
   DistributionPayload,
+  // V3.2
+  GrowthScoreResult,
+  MutatedVariant,
+  AttributionEvent,
 };

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { V2Output } from '@/lib/symbol/v2/types';
 import { runV3Engine } from '@/lib/symbol/v3';
-import type { ContentStudioPayload, ContentVariant, BestVariantResult } from '@/lib/symbol/v3';
+import type { ContentStudioPayload, ContentVariant, BestVariantResult, MutatedVariant } from '@/lib/symbol/v3';
+import { trackConversion } from '@/lib/symbol/v3/attribution';
 
 const WellnessRadar = dynamic(() => import('@/components/WellnessRadar'), { ssr: false });
 
@@ -16,8 +17,10 @@ export default function Result() {
   const [studio, setStudio] = useState<ContentStudioPayload | null>(null);
   const [content, setContent] = useState<ContentVariant | null>(null);
   const [bestPick, setBestPick] = useState<BestVariantResult | null>(null);
+  const [mutations, setMutations] = useState<MutatedVariant[]>([]);
   const [copied, setCopied] = useState('');
   const [showScript, setShowScript] = useState(false);
+  const [showMutations, setShowMutations] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
   const [step, setStep] = useState<Step>('score');
@@ -32,6 +35,7 @@ export default function Result() {
         setStudio(engines.studio);
         setContent(engines.content);
         setBestPick(engines.bestPick);
+        setMutations(engines.mutations);
       } catch {
         // ignore
       }
@@ -168,6 +172,18 @@ export default function Result() {
           </div>
         </div>
 
+        {/* FREE LAYER: V3.2 Optimization Status */}
+        <div className={`transition-all duration-700 mt-6 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          style={{ transitionDelay: step === 'evidence' ? '330ms' : '0ms' }}>
+          <div className="p-4 border border-white/10 rounded-xl bg-white/[0.02]">
+            <p className="text-xs text-white/30 uppercase">System Optimization Status</p>
+            <p className="text-sm text-white/60 mt-2">
+              This report version is optimized based on previous user response patterns.
+            </p>
+            <p className="text-xs text-[#C4A862] mt-2">Variant: v3.2-adaptive</p>
+          </div>
+        </div>
+
         {/* FREE LAYER: V3.1 Shareable Insight (visible before paywall) */}
         {content && bestPick && (
           <div className={`transition-all duration-700 mt-6 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
@@ -285,6 +301,42 @@ export default function Result() {
                     </span>
                   </div>
 
+                  {/* V3.2: Content Mutation Variants (折叠) */}
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setShowMutations(!showMutations)}
+                      className="w-full py-3 rounded-xl border border-white/10 text-white text-sm hover:bg-white/5 transition flex items-center justify-center gap-2"
+                    >
+                      <span>{showMutations ? '▾' : '▸'}</span>
+                      {showMutations ? 'Hide' : 'Show'} Content Variants (A/B Test)
+                    </button>
+                    {showMutations && (
+                      <div className="mt-2 space-y-2">
+                        {mutations.map((m, i) => (
+                          <div key={i} className="p-3 border border-white/10 rounded-xl bg-white/[0.02]">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-white/30 uppercase">{m.tone}</span>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(m.text);
+                                  setCopied('mut-' + i);
+                                  setTimeout(() => setCopied(''), 2000);
+                                  if (studio?.share_link) {
+                                    trackConversion(studio.share_link.split('ref=')[1] || 'unknown', 'direct', 'share');
+                                  }
+                                }}
+                                className="text-xs text-[#C4A862]"
+                              >
+                                {copied === 'mut-' + i ? '✓' : '📋'}
+                              </button>
+                            </div>
+                            <p className="text-xs text-white/50 leading-relaxed">{m.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Auto Content Panel */}
 
                   {/* Best variant card */}
@@ -329,7 +381,11 @@ export default function Result() {
                   {/* Action Buttons */}
                   <div className="mt-4 space-y-2">
                     <button
-                      onClick={() => postToTwitter(bestPick.variant.text)}
+                      onClick={() => {
+                        const ref = studio?.share_link.split('ref=')[1] || 'unknown';
+                        trackConversion(ref, 'twitter', 'share');
+                        postToTwitter(bestPick.variant.text);
+                      }}
                       className="w-full py-3 bg-white text-black rounded-xl text-sm font-medium hover:opacity-90 transition flex items-center justify-center gap-2"
                     >
                       🐦 Post to Twitter{bestPick.score >= 60 ? ' (Recommended)' : ''}
@@ -337,6 +393,8 @@ export default function Result() {
                     <button
                       onClick={() => {
                         const text = `${content.short_hook}\n\n${content.long_form}\n\n${studio?.share_link || ''}`;
+                        const ref = studio?.share_link.split('ref=')[1] || 'unknown';
+                        trackConversion(ref, 'direct', 'share');
                         copyText('viral', text);
                       }}
                       className="w-full py-3 rounded-xl border border-white/20 text-white text-sm hover:bg-white/5 transition"
@@ -344,7 +402,11 @@ export default function Result() {
                       {copied === 'viral' ? '✓ Copied!' : '📋 Copy Viral Caption'}
                     </button>
                     <button
-                      onClick={handleShare}
+                      onClick={() => {
+                        const ref = studio?.share_link.split('ref=')[1] || 'unknown';
+                        trackConversion(ref, 'direct', 'share');
+                        handleShare();
+                      }}
                       className="w-full py-3 rounded-xl border border-[#C4A862]/40 text-[#C4A862] text-sm hover:bg-[#C4A862]/5 transition"
                     >
                       📤 Share My Pattern
