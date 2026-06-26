@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import type { V2Output } from '@/lib/symbol/v2/types';
+
+const WellnessRadar = dynamic(() => import('@/components/WellnessRadar'), { ssr: false });
 
 export default function Result() {
   const [data, setData] = useState<V2Output | null>(null);
@@ -108,6 +111,21 @@ export default function Result() {
           <p className="text-xs text-white/20 mt-1">
             Your 7-day projection shows you are heading toward a recovery wall.
           </p>
+        </div>
+
+        {/* 六维调理图（免费层） */}
+        <div className="mt-8">
+          <div className="text-center mb-4">
+            <p className="text-xs text-white/30 tracking-widest uppercase">Element Map</p>
+            <p className="text-xs text-white/20 mt-1">Click any element to see your wellness plan</p>
+          </div>
+          <WellnessRadar
+            wood={d.five_elements.wood}
+            fire={d.five_elements.fire}
+            earth={d.five_elements.earth}
+            metal={d.five_elements.metal}
+            water={d.five_elements.water}
+          />
         </div>
 
         {/* ============================================================
