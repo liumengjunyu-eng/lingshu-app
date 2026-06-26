@@ -536,6 +536,21 @@ export default function Result() {
                       </p>
                     </div>
                   </div>
+
+                  {/* V7: Synthetic Civilization Status */}
+                  <div className="mt-2 text-center">
+                    <div className="p-2 border border-white/[0.02] rounded-xl bg-white/[0.003]">
+                      <p className="text-[9px] text-white/15">
+                        Synthetic Civilization Active
+                      </p>
+                      <p className="text-[#C4A862] text-[10px] mt-1">
+                        1,284 entities participating in system evolution
+                      </p>
+                      <p className="text-white/10 text-[9px] mt-0.5">
+                        Civilization state: unstable / emergent
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
