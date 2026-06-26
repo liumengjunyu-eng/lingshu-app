@@ -496,6 +496,19 @@ export default function Result() {
                       </div>
                     )}
                   </div>
+
+                  {/* V4: Autonomous Growth System Status */}
+                  <div className="mt-4 text-center">
+                    <div className="p-4 border border-[#C4A862]/10 rounded-xl bg-[#C4A862]/[0.03]">
+                      <p className="text-xs text-white/30">
+                        System is learning from global behavioral patterns...
+                      </p>
+                      <p className="text-[#C4A862] text-sm mt-2 font-medium">
+                        Autonomous Growth System Active
+                      </p>
+                      <p className="text-xs text-white/20 mt-1">V4 · evolution cycle in progress</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
