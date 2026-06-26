@@ -521,6 +521,21 @@ export default function Result() {
                       </p>
                     </div>
                   </div>
+
+                  {/* V6: Synthetic Economy Status */}
+                  <div className="mt-2 text-center">
+                    <div className="p-2.5 border border-white/[0.03] rounded-xl bg-white/[0.005]">
+                      <p className="text-[10px] text-white/20">
+                        Synthetic Economy Running
+                      </p>
+                      <p className="text-[#C4A862] text-[11px] mt-1">
+                        37 autonomous entities active
+                      </p>
+                      <p className="text-white/10 text-[10px] mt-0.5">
+                        Market equilibrium: unstable
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
