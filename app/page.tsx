@@ -1,82 +1,111 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-const EXAMPLES = [
- 'Running on empty',
- "Can't switch off at night",
- 'Everything feels delayed',
-];
+import { useEffect, useState } from 'react';
 
 export default function HomePage() {
  const router = useRouter();
- const [input, setInput] = useState('');
- const [showCTA, setShowCTA] = useState(false);
+ const [loaded, setLoaded] = useState(false);
 
  useEffect(() => {
- const timer = setTimeout(() => setShowCTA(true), 1200);
- return () => clearTimeout(timer);
+ setLoaded(true);
  }, []);
 
- const handleSubmit = () => {
- if (input.trim()) {
- router.push(`/diagnose?input=${encodeURIComponent(input)}`);
- }
- };
-
  return (
- <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
- <div className="max-w-xl w-full text-center">
+ <main className="min-h-screen bg-[#0B0F14] text-white flex flex-col items-center justify-center px-6 relative overflow-hidden">
+
+ {/* 背景呼吸光 */}
+ <div className="absolute inset-0 flex items-center justify-center">
+ <div className="w-[280px] h-[280px] rounded-full bg-[#D6B36A]/10 blur-3xl animate-pulse-slow" />
+ </div>
+
+ {/* HERO */}
+ <div className="max-w-xl w-full text-center relative z-10">
+
  {/* 呼吸圆 */}
- <div className="w-16 h-16 mx-auto rounded-full border border-gold/20 animate-breath mb-8" />
+ <div className="w-16 h-16 mx-auto mb-10 rounded-full border border-[#D6B36A]/20 animate-breath" />
 
  {/* 主标题 */}
- <h1 className="text-hero font-light text-white leading-[1.15] tracking-tight">
- You are not broken.
- <br />
- <span className="text-gold">You are just operating beyond your recovery capacity.</span>
+ <h1 className="text-[32px] md:text-[42px] leading-tight font-light tracking-tight text-white">
+ Your system is always speaking.
  </h1>
 
- {/* 输入框 */}
- <div className="mt-8 relative">
- <div className="absolute inset-0 bg-gold/5 blur-2xl rounded-xl" />
- <textarea
- value={input}
- onChange={(e) => setInput(e.target.value)}
- placeholder="Describe your current state in one sentence."
- className="relative w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white text-body placeholder:text-white/20 outline-none focus:border-gold/50 transition resize-none min-h-[80px]"
- onKeyDown={(e) => {
- if (e.key === 'Enter' && !e.shiftKey) {
- e.preventDefault();
- handleSubmit();
- }
- }}
- />
- </div>
-
- {/* 案例气泡 */}
- <div className="mt-4 flex flex-wrap justify-center gap-2">
- {EXAMPLES.map((text) => (
- <button
- key={text}
- onClick={() => setInput(text)}
- className="px-4 py-1.5 text-meta text-white/40 border border-white/5 rounded-full hover:border-gold/30 hover:text-white/70 transition"
- >
- {text}
- </button>
- ))}
- </div>
+ {/* 副标题 */}
+ <p className="mt-4 text-white/60 text-[15px] leading-relaxed">
+ We help you listen.
+ </p>
 
  {/* CTA */}
- <div className={`mt-8 transition-opacity duration-700 ${showCTA ? 'opacity-100' : 'opacity-0'}`}>
  <button
- onClick={handleSubmit}
- className="w-full py-3 bg-gold text-bg rounded-full font-medium hover:opacity-90 transition text-body"
+ onClick={() => router.push('/diagnose')}
+ className="mt-10 w-full py-3 rounded-full bg-[#D6B36A] text-black font-medium hover:opacity-90 transition"
  >
- Analyze My System
+ Start Free Check
  </button>
- <p className="text-meta text-white/15 mt-3">Free · 2 minutes</p>
+
+ <p className="text-[12px] text-white/30 mt-3">
+ Free · 2 minutes
+ </p>
+
+ {/* 分隔 */}
+ <div className="mt-12 border-t border-white/5 pt-10 space-y-6">
+
+ {/* What we analyze */}
+ <div>
+ <h2 className="text-[14px] text-white/50 mb-3 tracking-wide">
+ What we analyze
+ </h2>
+
+ <p className="text-[14px] text-white/70 leading-relaxed">
+ Body recovery · Mental load · Emotional pressure
+ </p>
+
+ <p className="text-[12px] text-white/30 mt-2">
+ Not personality. Not fortune telling. System patterns.
+ </p>
+ </div>
+
+ {/* difference */}
+ <div>
+ <h2 className="text-[14px] text-white/50 mb-3 tracking-wide">
+ Why this feels different
+ </h2>
+
+ <div className="grid grid-cols-3 gap-2 text-[12px] text-white/60">
+ <div className="border border-white/5 rounded-lg p-3">
+ Labels you
+ </div>
+ <div className="border border-white/5 rounded-lg p-3">
+ Describes you
+ </div>
+ <div className="border border-[#D6B36A]/20 rounded-lg p-3 text-[#D6B36A]">
+ Maps your system
+ </div>
+ </div>
+ </div>
+
+ {/* preview card */}
+ <div className="border border-white/10 rounded-xl p-5 bg-white/[0.02]">
+ <h2 className="text-[14px] text-white/50 mb-4">
+ Your result preview
+ </h2>
+
+ <div className="space-y-2 text-[13px] font-mono text-white/70">
+ <p>System Load: <span className="text-[#D6B36A]">72</span></p>
+ <p>Primary Pattern: Compensated State</p>
+ <p>Main Signal: High output / Low recovery</p>
+ <p>Element trend: Fire ↑ Water ↓</p>
+ </div>
+ </div>
+
+ {/* final CTA */}
+ <button
+ onClick={() => router.push('/diagnose')}
+ className="w-full py-3 rounded-full border border-[#D6B36A]/30 text-[#D6B36A] hover:bg-[#D6B36A] hover:text-black transition"
+ >
+ Reveal My System
+ </button>
+
  </div>
  </div>
  </main>
