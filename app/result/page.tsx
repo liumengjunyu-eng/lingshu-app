@@ -509,6 +509,18 @@ export default function Result() {
                       <p className="text-xs text-white/20 mt-1">V4 · evolution cycle in progress</p>
                     </div>
                   </div>
+
+                  {/* V5: Autonomous Business System Status */}
+                  <div className="mt-3 text-center">
+                    <div className="p-3 border border-white/5 rounded-xl bg-white/[0.01]">
+                      <p className="text-xs text-white/30">
+                        Autonomous Business System Active
+                      </p>
+                      <p className="text-[#C4A862] text-xs mt-1.5">
+                        Revenue optimization in progress...
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
