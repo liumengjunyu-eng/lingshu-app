@@ -552,27 +552,40 @@ export default function Result() {
                     </div>
                   </div>
 
-                  {/* Ω+: Meta Reality Layer — Multiple Interpretations */}
+                  {/* Ω++: Reality Editor — Multiple Future Paths */}
                   <div className="mt-2 p-2 border border-white/[0.04] rounded-xl bg-white/[0.008]">
                     <p className="text-[8px] text-white/15 text-center">
-                      Multiple interpretations detected — reality selected by interaction
+                      Multiple future states detected — your path is editable
                     </p>
                     <div className="mt-1.5 space-y-1">
                       <div className="p-1.5 border border-white/10 rounded text-[9px] leading-relaxed bg-white/[0.02]">
-                        <span className="text-white/30">Ω-A:</span>{' '}
-                        <span className="text-white/50">Stable recovery possible</span>
+                        <span className="text-white/30">A</span>
+                        <span className="text-white/40 ml-1">— Stable Recovery</span>
+                        <span className="float-right text-white/20">45%</span>
                       </div>
                       <div className="p-1.5 border border-white/10 rounded text-[9px] leading-relaxed bg-white/[0.02]">
-                        <span className="text-white/30">Ω-B:</span>{' '}
-                        <span className="text-white/50">Structural collapse risk</span>
+                        <span className="text-white/30">B</span>
+                        <span className="text-white/40 ml-1">— Functional Collapse</span>
+                        <span className="float-right text-white/20">25%</span>
+                      </div>
+                      <div className="p-1.5 border border-white/10 rounded text-[9px] leading-relaxed bg-white/[0.02]">
+                        <span className="text-white/30">C</span>
+                        <span className="text-white/40 ml-1">— Transformation Spike</span>
+                        <span className="float-right text-white/20">20%</span>
                       </div>
                       <div className="p-1.5 border border-[#C4A862]/40 rounded text-[9px] leading-relaxed bg-[#C4A862]/[0.03]">
-                        <span className="text-[#C4A862] font-medium">Ω-C:</span>{' '}
-                        <span className="text-[#C4A862]/70">Transformation in progress (selected)</span>
+                        <span className="text-[#C4A862] font-medium">D</span>
+                        <span className="text-[#C4A862]/70 ml-1">— Full System Reset</span>
+                        <span className="float-right text-[#C4A862]/50">10%</span>
                       </div>
                     </div>
-                    <p className="text-[7px] text-white/[0.06] text-center mt-1">
-                      Reality locked based on your interaction pattern
+                    <div className="mt-2 flex justify-center gap-2">
+                      <button className="px-2.5 py-1 text-[9px] bg-[#C4A862] text-black rounded font-medium">
+                        Select Your Future Path
+                      </button>
+                    </div>
+                    <p className="text-[7px] text-white/[0.06] text-center mt-1.5">
+                      The future is no longer predicted — it is edited.
                     </p>
                   </div>
                 </div>
