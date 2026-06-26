@@ -5,7 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { V2Output } from '@/lib/symbol/v2/types';
 import { runV3Engine } from '@/lib/symbol/v3';
-import type { ContentStudioPayload } from '@/lib/symbol/v3';
+import type { ContentStudioPayload, ContentVariant, BestVariantResult } from '@/lib/symbol/v3';
 
 const WellnessRadar = dynamic(() => import('@/components/WellnessRadar'), { ssr: false });
 
@@ -13,8 +13,11 @@ type Step = 'score' | 'label' | 'evidence';
 
 export default function Result() {
   const [data, setData] = useState<V2Output | null>(null);
-  const [v3, setV3] = useState<ContentStudioPayload | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [studio, setStudio] = useState<ContentStudioPayload | null>(null);
+  const [content, setContent] = useState<ContentVariant | null>(null);
+  const [bestPick, setBestPick] = useState<BestVariantResult | null>(null);
+  const [copied, setCopied] = useState('');
+  const [showScript, setShowScript] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
   const [step, setStep] = useState<Step>('score');
@@ -26,15 +29,16 @@ export default function Result() {
         const parsed: V2Output = JSON.parse(stored);
         setData(parsed);
         const engines = runV3Engine(parsed);
-        setV3(engines.studio);
+        setStudio(engines.studio);
+        setContent(engines.content);
+        setBestPick(engines.bestPick);
       } catch {
-        // ignore parse errors
+        // ignore
       }
     }
     setLoading(false);
   }, []);
 
-  // Auto-reveal: new step every 400ms
   useEffect(() => {
     if (!data) return;
     const timer = setTimeout(() => {
@@ -47,12 +51,22 @@ export default function Result() {
   const handleUnlock = () => setUnlocked(true);
 
   const handleShare = () => {
-    if (!data || !v3) return;
+    if (!data || !studio) return;
     navigator.share?.({
       title: 'My System Report',
-      text: `${v3.hook}\n\n${v3.identity}\n${v3.metric}\n\n${v3.share_link}`,
+      text: `${studio.hook}\n\n${studio.identity}\n${studio.metric}\n\n${studio.share_link}`,
       url: window.location.href,
     });
+  };
+
+  const copyText = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    setTimeout(() => setCopied(''), 2000);
+  };
+
+  const postToTwitter = (text: string) => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   if (loading) {
@@ -86,9 +100,7 @@ export default function Result() {
         <div className={`transition-all duration-700 ${step === 'score' ? 'opacity-100' : 'opacity-30'}`}>
           <div className="text-center">
             <h1 className="text-2xl font-light">System Load Index</h1>
-            <p className="text-[#C4A862] text-7xl font-light mt-2 transition-all duration-1000">
-              {d.user_profile.intensity_score}
-            </p>
+            <p className="text-[#C4A862] text-7xl font-light mt-2">{d.user_profile.intensity_score}</p>
           </div>
         </div>
 
@@ -97,12 +109,8 @@ export default function Result() {
           style={{ transitionDelay: step !== 'score' ? '100ms' : '0ms' }}>
           <div className="border border-[#C4A862]/30 rounded-xl p-6 bg-[#C4A862]/5 text-center">
             <p className="text-xs text-white/30 tracking-widest uppercase">System State</p>
-            <p className="text-xl text-[#C4A862] font-light mt-1">
-              ⚠ {d.interpretation.label}
-            </p>
-            <p className="text-sm text-white/40 mt-2 max-w-sm mx-auto">
-              {d.interpretation.insight}
-            </p>
+            <p className="text-xl text-[#C4A862] font-light mt-1">⚠ {d.interpretation.label}</p>
+            <p className="text-sm text-white/40 mt-2 max-w-sm mx-auto">{d.interpretation.insight}</p>
           </div>
         </div>
 
@@ -120,12 +128,9 @@ export default function Result() {
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-white/20 mt-4">
-              Confidence: {Math.round(d.confidence * 100)}%
-            </p>
+            <p className="text-xs text-white/20 mt-4">Confidence: {Math.round(d.confidence * 100)}%</p>
           </div>
 
-          {/* Body/Emotion summary */}
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="p-4 border border-white/10 rounded-xl">
               <p className="text-xs text-white/30 uppercase">Body</p>
@@ -144,23 +149,17 @@ export default function Result() {
           </div>
         </div>
 
-        {/* SIX DIMENSION WELLNESS (free layer) */}
+        {/* FREE LAYER: Wellness Radar */}
         <div className={`transition-all duration-700 mt-8 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           style={{ transitionDelay: step === 'evidence' ? '200ms' : '0ms' }}>
           <div className="text-center mb-4">
             <p className="text-xs text-white/30 tracking-widest uppercase">Element Map</p>
             <p className="text-xs text-white/20 mt-1">Click any element to see your wellness plan</p>
           </div>
-          <WellnessRadar
-            wood={d.five_elements.wood}
-            fire={d.five_elements.fire}
-            earth={d.five_elements.earth}
-            metal={d.five_elements.metal}
-            water={d.five_elements.water}
-          />
+          <WellnessRadar wood={d.five_elements.wood} fire={d.five_elements.fire} earth={d.five_elements.earth} metal={d.five_elements.metal} water={d.five_elements.water} />
         </div>
 
-        {/* 7-DAY FORECAST (free layer) */}
+        {/* FREE LAYER: Risk Signal */}
         <div className={`transition-all duration-700 mt-6 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           style={{ transitionDelay: step === 'evidence' ? '300ms' : '0ms' }}>
           <div className="p-4 border border-white/10 rounded-xl bg-white/5">
@@ -169,14 +168,30 @@ export default function Result() {
           </div>
         </div>
 
+        {/* FREE LAYER: V3.1 Shareable Insight (visible before paywall) */}
+        {content && bestPick && (
+          <div className={`transition-all duration-700 mt-6 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+            style={{ transitionDelay: step === 'evidence' ? '350ms' : '0ms' }}>
+            <div className="p-4 border border-white/10 rounded-xl">
+              <p className="text-xs text-white/30 uppercase mb-2">Shareable Insight</p>
+              <p className="text-sm text-white/70">{content.short_hook}</p>
+              <div className="flex items-center gap-2 mt-3">
+                <span className="text-xs text-[#C4A862]">
+                  {bestPick.variant.platform === 'hook' ? '📝 Share text' : `🐦 Best for ${bestPick.variant.platform}`}
+                </span>
+                <span className="text-xs text-white/20">|</span>
+                <span className="text-xs text-white/40">Virality: {bestPick.score}/100</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* PAYWALL */}
         <div className={`transition-all duration-700 mt-10 border-t border-white/10 pt-8 ${step === 'evidence' ? 'opacity-100' : 'opacity-0'}`}
           style={{ transitionDelay: step === 'evidence' ? '400ms' : '0ms' }}>
           {!unlocked ? (
             <div className="text-center">
-              <p className="text-sm text-white/50 font-light leading-relaxed">
-                {d.monetization.paywall_reason}
-              </p>
+              <p className="text-sm text-white/50 font-light leading-relaxed">{d.monetization.paywall_reason}</p>
               <div className="mt-4 p-4 border border-dashed border-white/10 rounded-xl">
                 <p className="text-xs text-white/30 uppercase mb-2">What You Get Free</p>
                 <p className="text-sm text-white/50">{d.monetization.what_free_shows}</p>
@@ -184,70 +199,53 @@ export default function Result() {
                 <p className="text-xs text-[#C4A862] uppercase">Behind Paywall</p>
                 <p className="text-sm text-white/60 mt-1">{d.monetization.what_paid_adds}</p>
               </div>
-              <button
-                onClick={handleUnlock}
-                className="mt-6 px-8 py-3 bg-[#C4A862] text-[#1A1A1A] rounded-full font-medium hover:opacity-90 transition"
-              >
+              <button onClick={handleUnlock} className="mt-6 px-8 py-3 bg-[#C4A862] text-[#1A1A1A] rounded-full font-medium hover:opacity-90 transition">
                 See Why This Is Happening →
               </button>
             </div>
           ) : (
-            /* UNLOCKED SECTION */
             <div className="space-y-6">
 
               {/* The Real Story */}
               <div className="p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5 text-center">
                 <p className="text-xs text-white/30 uppercase">The Real Story</p>
                 <p className="text-sm text-white/70 mt-2 italic">
-                  Your system is compensating, not failing.
-                  <br />
+                  Your system is compensating, not failing.<br />
                   This pattern is stable — until it is not.
                 </p>
               </div>
 
-              {/* Decision: Actions */}
+              {/* Decision */}
               {d.decision.actions.length > 0 && (
                 <div className="p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5">
                   <p className="text-xs text-white/30 uppercase">What You Should Do</p>
                   <ul className="mt-2 space-y-1 text-sm text-white/70">
-                    {d.decision.actions.map((a, i) => (
-                      <li key={i}>• {a}</li>
-                    ))}
+                    {d.decision.actions.map((a, i) => (<li key={i}>• {a}</li>))}
                   </ul>
                 </div>
               )}
-
-              {/* Decision: Warnings */}
               {d.decision.warnings.length > 0 && (
                 <div className="p-4 border border-red-500/20 rounded-xl bg-red-500/5">
                   <p className="text-xs text-red-400 uppercase">Warnings</p>
                   <ul className="mt-2 space-y-1 text-sm text-red-300">
-                    {d.decision.warnings.map((w, i) => (
-                      <li key={i}>• {w}</li>
-                    ))}
+                    {d.decision.warnings.map((w, i) => (<li key={i}>• {w}</li>))}
                   </ul>
                 </div>
               )}
-
-              {/* Decision: Prohibitions */}
               {d.decision.prohibitions.length > 0 && (
                 <div className="p-4 border border-white/10 rounded-xl">
                   <p className="text-xs text-white/30 uppercase">Avoid</p>
                   <ul className="mt-2 space-y-1 text-sm text-white/50">
-                    {d.decision.prohibitions.map((p, i) => (
-                      <li key={i}>• {p}</li>
-                    ))}
+                    {d.decision.prohibitions.map((p, i) => (<li key={i}>• {p}</li>))}
                   </ul>
                 </div>
               )}
 
-              {/* Recovery Protocol */}
+              {/* Recovery */}
               <div className="p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5">
                 <p className="text-xs text-white/30 uppercase">Recovery Protocol</p>
                 <p className="text-sm text-white/70 mt-1">{d.decision.recoveryProtocol}</p>
               </div>
-
-              {/* Recovery Pathway */}
               <div className="space-y-4">
                 <p className="text-xs text-white/30 uppercase tracking-widest">Your Recovery Pathway</p>
                 {(['phase_1', 'phase_2', 'phase_3'] as const).map((phase) => {
@@ -256,60 +254,106 @@ export default function Result() {
                     <div key={phase} className="p-4 border border-white/10 rounded-xl">
                       <p className="text-xs text-white/30 uppercase">{p.label}</p>
                       <p className="text-sm text-white/70 mt-1">{p.action}</p>
-                      {p.product && (
-                        <p className="text-xs text-[#C4A862] mt-1">→ {p.product.name}</p>
-                      )}
+                      {p.product && <p className="text-xs text-[#C4A862] mt-1">→ {p.product.name}</p>}
                     </div>
                   );
                 })}
               </div>
 
-              {/* V3 Content Studio — Your System Story */}
-              {v3 && (
+              {/* ─── V3.1 CONTENT ENGINE ─── */}
+              {content && bestPick && (
                 <div className="mt-8 border-t border-white/10 pt-6">
-                  <p className="text-xs text-white/30 uppercase tracking-widest text-center mb-4">
-                    Your System Story
-                  </p>
 
+                  {/* Identity Card */}
                   <div className="p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5 text-center">
-                    <p className="text-xs text-white/30 uppercase tracking-widest">Your Identity</p>
-                    <p className="text-lg text-[#C4A862] font-light mt-2">{v3.identity}</p>
-                    <div className="w-8 h-px bg-[#C4A862]/20 mx-auto my-3" />
-                    <p className="text-sm text-white/60 italic">&ldquo;{v3.hook}&rdquo;</p>
-                    <p className="text-xs text-white/30 mt-3">{v3.metric}</p>
+                    <p className="text-xs text-white/30 uppercase tracking-widest">Your System Story</p>
+                    {studio && (
+                      <>
+                        <p className="text-lg text-[#C4A862] font-light mt-2">{studio.identity}</p>
+                        <div className="w-8 h-px bg-[#C4A862]/20 mx-auto my-3" />
+                        <p className="text-sm text-white/60 italic">&ldquo;{content.short_hook}&rdquo;</p>
+                        {studio && <p className="text-xs text-white/30 mt-3">{studio.metric}</p>}
+                      </>
+                    )}
                   </div>
 
+                  {/* Viral Score Badge */}
+                  <div className="mt-4 p-3 border border-white/10 rounded-xl bg-white/[0.02] flex items-center justify-between">
+                    <span className="text-xs text-white/40">Viral Potential</span>
+                    <span className={`text-sm font-mono ${bestPick.score >= 60 ? 'text-green-400' : bestPick.score >= 40 ? 'text-yellow-400' : 'text-white/40'}`}>
+                      {bestPick.score}/100
+                    </span>
+                  </div>
+
+                  {/* Auto Content Panel */}
+
+                  {/* Best variant card */}
+                  <div className="mt-4 p-4 border border-white/10 rounded-xl">
+                    <p className="text-xs text-white/30 uppercase mb-2">
+                      {bestPick.variant.platform === 'tiktok' ? '🎬 Recommended for TikTok' :
+                       bestPick.variant.platform === 'twitter' ? '🐦 Recommended for Twitter' :
+                       bestPick.variant.platform === 'hook' ? '📝 Recommended (Best Hook)' :
+                       bestPick.variant.platform === 'threads' ? '🧵 Recommended for Threads' : '📄 Recommended'}
+                    </p>
+                    <p className="text-sm text-white/60 italic">{bestPick.explanation}</p>
+                    {bestPick.variant.platform !== 'tiktok' && bestPick.variant.platform !== 'hook' && (
+                      <p className="text-xs text-white/40 mt-2 font-mono bg-white/5 p-2 rounded leading-relaxed">
+                        {bestPick.variant.text.substring(0, 200)}
+                        {bestPick.variant.text.length > 200 ? '...' : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* TikTok Script toggle */}
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setShowScript(!showScript)}
+                      className="w-full py-3 rounded-xl border border-white/10 text-white text-sm hover:bg-white/5 transition flex items-center justify-center gap-2"
+                    >
+                      <span>{showScript ? '▾' : '▸'}</span>
+                      {showScript ? 'Hide' : 'Show'} TikTok Video Script
+                    </button>
+                    {showScript && (
+                      <div className="mt-2 p-4 border border-white/10 rounded-xl bg-white/[0.02]">
+                        <pre className="text-xs text-white/50 font-mono whitespace-pre-wrap leading-relaxed">{content.tiktok_script}</pre>
+                        <button
+                          onClick={() => copyText('tiktok', content.tiktok_script)}
+                          className="mt-3 text-xs text-[#C4A862]"
+                        >
+                          {copied === 'tiktok' ? '✓ Copied' : '📋 Copy Script'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
                   <div className="mt-4 space-y-2">
                     <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${v3.hook}\n\n${v3.body}\n\n${v3.share_link}`);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                      className="w-full py-3 rounded-xl border border-white/10 text-white text-sm hover:bg-white/5 transition"
+                      onClick={() => postToTwitter(bestPick.variant.text)}
+                      className="w-full py-3 bg-white text-black rounded-xl text-sm font-medium hover:opacity-90 transition flex items-center justify-center gap-2"
                     >
-                      {copied ? '✓ Copied!' : '📋 Copy Story'}
+                      🐦 Post to Twitter{bestPick.score >= 60 ? ' (Recommended)' : ''}
                     </button>
                     <button
                       onClick={() => {
-                        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${v3.hook}\n\n${v3.identity}\n${v3.metric}\n\n${v3.share_link}`)}`;
-                        window.open(twitterUrl, '_blank');
+                        const text = `${content.short_hook}\n\n${content.long_form}\n\n${studio?.share_link || ''}`;
+                        copyText('viral', text);
                       }}
-                      className="w-full py-3 rounded-xl border border-white/10 text-white text-sm hover:bg-white/5 transition"
+                      className="w-full py-3 rounded-xl border border-white/20 text-white text-sm hover:bg-white/5 transition"
                     >
-                      🐦 Share on Twitter
+                      {copied === 'viral' ? '✓ Copied!' : '📋 Copy Viral Caption'}
                     </button>
                     <button
                       onClick={handleShare}
-                      className="w-full py-3 bg-[#C4A862] text-black rounded-xl text-sm font-medium hover:opacity-90 transition"
+                      className="w-full py-3 rounded-xl border border-[#C4A862]/40 text-[#C4A862] text-sm hover:bg-[#C4A862]/5 transition"
                     >
                       📤 Share My Pattern
                     </button>
                   </div>
 
-                  <p className="text-xs text-white/10 text-center mt-4">
-                    {v3.share_link}
-                  </p>
+                  {studio && (
+                    <p className="text-xs text-white/10 text-center mt-4">{studio.share_link}</p>
+                  )}
                 </div>
               )}
             </div>
