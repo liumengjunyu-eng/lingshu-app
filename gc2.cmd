@@ -1,0 +1,1 @@
+git commit -m "result: merge emotion with full content"
