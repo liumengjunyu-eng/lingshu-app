@@ -5,7 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { V2Output } from '@/lib/symbol/v2/types';
 import { runV3Engine } from '@/lib/symbol/v3';
-import type { ContentStudioPayload, ContentVariant, BestVariantResult, MutatedVariant } from '@/lib/symbol/v3';
+import type { ContentStudioPayload, ContentVariant, BestVariantResult, MutatedVariant, ContentProduct, DistributionDecision } from '@/lib/symbol/v3';
 import { trackConversion } from '@/lib/symbol/v3/attribution';
 
 const WellnessRadar = dynamic(() => import('@/components/WellnessRadar'), { ssr: false });
@@ -21,6 +21,9 @@ export default function Result() {
   const [copied, setCopied] = useState('');
   const [showScript, setShowScript] = useState(false);
   const [showMutations, setShowMutations] = useState(false);
+  const [factoryProducts, setFactoryProducts] = useState<ContentProduct[]>([]);
+  const [distributionDecision, setDistributionDecision] = useState<DistributionDecision | null>(null);
+  const [showNetwork, setShowNetwork] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
   const [step, setStep] = useState<Step>('score');
@@ -36,6 +39,8 @@ export default function Result() {
         setContent(engines.content);
         setBestPick(engines.bestPick);
         setMutations(engines.mutations);
+        setFactoryProducts(engines.factoryProducts);
+        setDistributionDecision(engines.distributionDecision);
       } catch {
         // ignore
       }
@@ -181,6 +186,18 @@ export default function Result() {
               This report version is optimized based on previous user response patterns.
             </p>
             <p className="text-xs text-[#C4A862] mt-2">Variant: v3.2-adaptive</p>
+          </div>
+        </div>
+
+        {/* FREE LAYER: V3.3 Network Status */}
+        <div className={`transition-all duration-700 mt-4 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          style={{ transitionDelay: step === 'evidence' ? '340ms' : '0ms' }}>
+          <div className="p-4 border border-white/10 rounded-xl bg-white/[0.02]">
+            <p className="text-xs text-white/30 uppercase">Network Status</p>
+            <p className="text-sm text-white/60 mt-2">
+              This system is learning how your type spreads information.
+            </p>
+            <p className="text-xs text-[#C4A862] mt-2">Growth Graph Active</p>
           </div>
         </div>
 
@@ -416,6 +433,69 @@ export default function Result() {
                   {studio && (
                     <p className="text-xs text-white/10 text-center mt-4">{studio.share_link}</p>
                   )}
+
+                  {/* V3.3: Network & Factory Panel */}
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setShowNetwork(!showNetwork)}
+                      className="w-full py-3 rounded-xl border border-white/10 text-white text-sm hover:bg-white/5 transition flex items-center justify-center gap-2"
+                    >
+                      <span>{showNetwork ? '▾' : '▸'}</span>
+                      {showNetwork ? 'Hide' : 'Show'} Autonomous Growth Network
+                    </button>
+                    {showNetwork && (
+                      <div className="mt-3 space-y-3">
+                        {/* Content Factory */}
+                        <div className="p-3 border border-white/10 rounded-xl bg-white/[0.02]">
+                          <p className="text-xs text-white/30 uppercase mb-2">Content Factory (6 Variants)</p>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {factoryProducts.map((p, i) => (
+                              <div key={i} className="flex items-center justify-between text-xs">
+                                <span className="text-white/60 capitalize">{p.angle}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-1.5 py-0.5 rounded ${p.intensity > 70 ? 'bg-green-900/30 text-green-400' : p.intensity > 40 ? 'bg-yellow-900/30 text-yellow-400' : 'bg-gray-800/30 text-gray-400'}`}>
+                                    {p.intensity}
+                                  </span>
+                                  <button
+                                    onClick={() => { navigator.clipboard.writeText(p.hook); setCopied('fact-' + i); setTimeout(() => setCopied(''), 1500); }}
+                                    className="text-[#C4A862]"
+                                  >
+                                    {copied === 'fact-' + i ? '✓' : '📋'}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Distribution Decision */}
+                        {distributionDecision && (
+                          <div className="p-3 border border-white/10 rounded-xl bg-white/[0.02]">
+                            <p className="text-xs text-white/30 uppercase mb-2">Predictive Distribution</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/60">Best channel</span>
+                              <span className="text-xs text-[#C4A862] font-mono uppercase">{distributionDecision.channel}</span>
+                            </div>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-xs text-white/60">Expected CTR</span>
+                              <span className="text-xs text-white/70">{(distributionDecision.expectedCtr * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-xs text-white/60">Confidence</span>
+                              <span className={`text-xs ${distributionDecision.confidence === 'high' ? 'text-green-400' : distributionDecision.confidence === 'medium' ? 'text-yellow-400' : 'text-white/40'}`}>{distributionDecision.confidence}</span>
+                            </div>
+                            <p className="text-xs text-white/30 mt-2">{distributionDecision.reasoning}</p>
+                          </div>
+                        )}
+
+                        {/* Growth Graph placeholder */}
+                        <div className="p-3 border border-white/10 rounded-xl bg-white/[0.02]">
+                          <p className="text-xs text-white/30 uppercase mb-1">Growth Graph</p>
+                          <p className="text-xs text-white/50">Network nodes: tracking active — system is learning how this type spreads.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

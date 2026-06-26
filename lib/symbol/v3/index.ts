@@ -1,6 +1,6 @@
 // lib/symbol/v3/index.ts
 // V3 Growth Engine — 统一入口
-// V3.2: + Growth Intelligence + Content Mutation + Conversion Attribution
+// V3.3: + Growth Graph Engine + Content Factory + Predictive Distribution
 
 import type { V2Output } from '@/lib/symbol/v2/types';
 import { buildInsight, type InsightOutput } from './insight';
@@ -21,6 +21,11 @@ import { calculateGrowthScore, type GrowthScoreResult } from './growth';
 import { mutateContent, mutateHook, type MutatedVariant } from './mutation';
 import { trackConversion, type AttributionEvent } from './attribution';
 
+// V3.3
+import { GrowthGraph, type UserNode } from './graph';
+import { contentFactory, type ContentProduct } from './factory';
+import { predictBestChannel, type DistributionDecision } from './distribution_v33';
+
 export interface V3Output {
   insight: InsightOutput;
   narrative: NarrativeOutput;
@@ -32,6 +37,10 @@ export interface V3Output {
   // V3.2
   mutations: MutatedVariant[];
   hookMutations: MutatedVariant[];
+  // V3.3
+  factoryProducts: ContentProduct[];
+  distributionDecision: DistributionDecision;
+  graph: GrowthGraph;
 }
 
 export function runV3Engine(v2: V2Output): V3Output {
@@ -54,7 +63,16 @@ export function runV3Engine(v2: V2Output): V3Output {
   const mutations = mutateContent(content.short_hook);
   const hookMutations = mutateHook(content.short_hook);
 
-  return { insight, narrative, share, studio, content, bestPick, distribution, mutations, hookMutations };
+  // V3.3
+  const factoryProducts = contentFactory(v2);
+  const distributionDecision = predictBestChannel({
+    intensity: Math.min(100, (v2.user_profile?.intensity_score || 50) + (v2.signals?.stress || 50) / 2),
+    angle: bestPick.variant?.platform || 'insight',
+    shareText: content.short_hook,
+  });
+  const graph = GrowthGraph.create();
+
+  return { insight, narrative, share, studio, content, bestPick, distribution, mutations, hookMutations, factoryProducts, distributionDecision, graph };
 }
 
 export {
@@ -71,6 +89,10 @@ export {
   mutateContent,
   mutateHook,
   trackConversion,
+  // V3.3
+  GrowthGraph,
+  contentFactory,
+  predictBestChannel,
 };
 export type {
   InsightOutput,
@@ -84,4 +106,8 @@ export type {
   GrowthScoreResult,
   MutatedVariant,
   AttributionEvent,
+  // V3.3
+  UserNode,
+  ContentProduct,
+  DistributionDecision,
 };
