@@ -7,10 +7,13 @@ import type { V2Output } from '@/lib/symbol/v2/types';
 
 const WellnessRadar = dynamic(() => import('@/components/WellnessRadar'), { ssr: false });
 
+type Step = 'score' | 'label' | 'evidence';
+
 export default function Result() {
   const [data, setData] = useState<V2Output | null>(null);
   const [loading, setLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
+  const [step, setStep] = useState<Step>('score');
 
   useEffect(() => {
     const stored = localStorage.getItem('v2_result');
@@ -24,13 +27,24 @@ export default function Result() {
     setLoading(false);
   }, []);
 
+  // Auto-reveal: new step every 400ms
+  useEffect(() => {
+    if (!data) return;
+    const timer = setTimeout(() => {
+      if (step === 'score') setStep('label');
+      else if (step === 'label') setStep('evidence');
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [step, data]);
+
   const handleUnlock = () => setUnlocked(true);
 
   const handleShare = () => {
     if (!data) return;
+    const text = `${data.narrative.share_identity}\n\n${data.narrative.share_sentence}\n\nLoad Index: ${data.user_profile.intensity_score}`;
     navigator.share?.({
       title: 'My System Report',
-      text: data.narrative_seed,
+      text,
       url: window.location.href,
     });
   };
@@ -62,59 +76,79 @@ export default function Result() {
     <main className="min-h-screen bg-[#1A1A1A] text-white px-6 py-12">
       <div className="max-w-2xl mx-auto">
 
-        {/* ============================================================
-        免费层：冲击诊断
-        ============================================================ */}
-
-        {/* Score */}
-        <div className="text-center">
-          <h1 className="text-2xl font-light">Your System State</h1>
-          <p className="text-[#C4A862] text-6xl font-light mt-2">{d.user_profile.intensity_score}</p>
-          <p className="text-white/30 text-sm mt-1">System Load Index</p>
-        </div>
-
-        {/* 冲击标签 */}
-        <div className="mt-6 border border-[#C4A862]/30 rounded-xl p-6 bg-[#C4A862]/5 text-center">
-          <p className="text-xs text-white/30 tracking-widest uppercase">System State</p>
-          <p className="text-xl text-[#C4A862] font-light mt-1">
-            ⚠️ Compensated Collapse State
-          </p>
-          <p className="text-sm text-white/40 mt-2 max-w-sm mx-auto">
-            You are still functioning. Your system is paying for it in the background.
-          </p>
-          <p className="text-xs text-white/20 mt-4 italic">
-            This is a system pattern. It can be mapped — but not solved for free.
-          </p>
-          <p className="text-xs text-white/10 mt-1">
-            You have not hit zero yet. But the cost curve is exponential.
-          </p>
-        </div>
-
-        {/* 身体 + 情绪摘要 */}
-        <div className="mt-6 grid grid-cols-2 gap-4">
-          <div className="p-4 border border-white/10 rounded-xl">
-            <p className="text-xs text-white/30 uppercase">Body</p>
-            <p className="text-sm mt-1 text-white/70 capitalize">{d.body_system.energy_level} energy</p>
-            <p className="text-xs text-white/40 mt-0.5">{d.body_system.fatigue_type.replace(/_/g, ' ')}</p>
-          </div>
-          <div className="p-4 border border-white/10 rounded-xl">
-            <p className="text-xs text-white/30 uppercase">Emotion</p>
-            <p className="text-sm mt-1 text-white/70">{d.emotion_system.dominant_state.replace(/_/g, ' ')}</p>
-            <p className="text-xs text-white/40 mt-0.5 capitalize">{d.emotion_system.volatility} volatility</p>
+        {/* ────────────────────────────────────────────
+        STEP 1: SCORE
+        ──────────────────────────────────────────── */}
+        <div className={`transition-all duration-700 ${step === 'score' ? 'opacity-100' : 'opacity-30'}`}>
+          <div className="text-center">
+            <h1 className="text-2xl font-light">System Load Index</h1>
+            <p className="text-[#C4A862] text-7xl font-light mt-2 transition-all duration-1000">
+              {d.user_profile.intensity_score}
+            </p>
           </div>
         </div>
 
-        {/* 7天风险预告 */}
-        <div className="mt-6 p-4 border border-white/10 rounded-xl bg-white/5">
-          <p className="text-xs text-white/30 uppercase">Risk Signal</p>
-          <p className="text-sm text-[#C4A862] mt-1 font-light">{d.forecast['7_days']}</p>
-          <p className="text-xs text-white/20 mt-1">
-            Your 7-day projection shows you are heading toward a recovery wall.
-          </p>
+        {/* ────────────────────────────────────────────
+        STEP 2: LABEL
+        ──────────────────────────────────────────── */}
+        <div className={`transition-all duration-700 mt-6 ${step !== 'score' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          style={{ transitionDelay: step !== 'score' ? '100ms' : '0ms' }}>
+          <div className="border border-[#C4A862]/30 rounded-xl p-6 bg-[#C4A862]/5 text-center">
+            <p className="text-xs text-white/30 tracking-widest uppercase">System State</p>
+            <p className="text-xl text-[#C4A862] font-light mt-1">
+              ⚠ {d.interpretation.label}
+            </p>
+            <p className="text-sm text-white/40 mt-2 max-w-sm mx-auto">
+              {d.interpretation.insight}
+            </p>
+          </div>
         </div>
 
-        {/* 六维调理图（免费层） */}
-        <div className="mt-8">
+        {/* ────────────────────────────────────────────
+        STEP 3: EVIDENCE
+        ──────────────────────────────────────────── */}
+        <div className={`transition-all duration-700 mt-6 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          style={{ transitionDelay: step === 'evidence' ? '100ms' : '0ms' }}>
+          <div className="p-6 border border-white/10 rounded-xl">
+            <p className="text-xs text-white/30 uppercase mb-3">Evidence</p>
+            <p className="text-sm text-white/50 mb-3 italic">This is not random.</p>
+            <ul className="space-y-2">
+              {d.interpretation.evidence.map((e, i) => (
+                <li key={i} className="text-sm text-white/70 flex items-start gap-2">
+                  <span className="text-[#C4A862] mt-0.5">•</span>
+                  {e}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-white/20 mt-4">
+              Confidence: {Math.round(d.confidence * 100)}%
+            </p>
+          </div>
+
+          {/* Body/Emotion summary */}
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="p-4 border border-white/10 rounded-xl">
+              <p className="text-xs text-white/30 uppercase">Body</p>
+              <p className="text-sm mt-1 text-white/70">
+                {d.signals.body > 60 ? 'Normal' : d.signals.body > 40 ? 'Tired' : 'Depleted'}
+              </p>
+              <p className="text-xs text-white/40 mt-0.5">Signal: {d.signals.body}</p>
+            </div>
+            <div className="p-4 border border-white/10 rounded-xl">
+              <p className="text-xs text-white/30 uppercase">Emotion</p>
+              <p className="text-sm mt-1 text-white/70">
+                {d.signals.emotion > 60 ? 'Stable' : d.signals.emotion > 40 ? 'Fragile' : 'Volatile'}
+              </p>
+              <p className="text-xs text-white/40 mt-0.5">Signal: {d.signals.emotion}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ────────────────────────────────────────────
+        SIX DIMENSION WELLNESS (free layer)
+        ──────────────────────────────────────────── */}
+        <div className={`transition-all duration-700 mt-8 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          style={{ transitionDelay: step === 'evidence' ? '200ms' : '0ms' }}>
           <div className="text-center mb-4">
             <p className="text-xs text-white/30 tracking-widest uppercase">Element Map</p>
             <p className="text-xs text-white/20 mt-1">Click any element to see your wellness plan</p>
@@ -128,33 +162,55 @@ export default function Result() {
           />
         </div>
 
-        {/* ============================================================
-        Paywall + Share 合体（V2.5核心）
-        ============================================================ */}
-        <div className="mt-10 border-t border-white/10 pt-8">
+        {/* ────────────────────────────────────────────
+        7-DAY FORECAST (free layer)
+        ──────────────────────────────────────────── */}
+        <div className={`transition-all duration-700 mt-6 ${step === 'evidence' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          style={{ transitionDelay: step === 'evidence' ? '300ms' : '0ms' }}>
+          <div className="p-4 border border-white/10 rounded-xl bg-white/5">
+            <p className="text-xs text-white/30 uppercase">Risk Signal</p>
+            <p className="text-sm text-white/60 mt-1 font-light">{d.forecast['7_days']}</p>
+          </div>
+        </div>
 
-          {/* --- 未解锁：付费墙 --- */}
+        {/* ────────────────────────────────────────────
+        PAYWALL — unified WHY gap
+        ──────────────────────────────────────────── */}
+        <div className={`transition-all duration-700 mt-10 border-t border-white/10 pt-8 ${step === 'evidence' ? 'opacity-100' : 'opacity-0'}`}
+          style={{ transitionDelay: step === 'evidence' ? '400ms' : '0ms' }}>
           {!unlocked ? (
             <div className="text-center">
-              <h2 className="text-xl font-light">
-                Free report shows <span className="text-white/60">WHAT</span> is happening.
-              </h2>
-              <p className="text-sm text-white/40 mt-2">
-                Paid report shows <span className="text-[#C4A862]">WHY</span> it is happening — and what breaks next.
+              <p className="text-sm text-white/50 font-light leading-relaxed">
+                {d.monetization.paywall_reason}
               </p>
-
+              <div className="mt-4 p-4 border border-dashed border-white/10 rounded-xl">
+                <p className="text-xs text-white/30 uppercase mb-2">What You Get Free</p>
+                <p className="text-sm text-white/50">{d.monetization.what_free_shows}</p>
+                <div className="w-8 h-px bg-white/10 mx-auto my-3" />
+                <p className="text-xs text-[#C4A862] uppercase">Behind Paywall</p>
+                <p className="text-sm text-white/60 mt-1">{d.monetization.what_paid_adds}</p>
+              </div>
               <button
                 onClick={handleUnlock}
                 className="mt-6 px-8 py-3 bg-[#C4A862] text-[#1A1A1A] rounded-full font-medium hover:opacity-90 transition"
               >
-                Unlock Full System Map — $9.99 →
+                See Why This Is Happening →
               </button>
             </div>
           ) : (
-            /* --- 解锁后：决策 + 恢复路径 + 分享引擎（V2.5核心） --- */
+            /* ─── UNLOCKED ─── */
             <div className="space-y-6">
+              {/* 解释层 */}
+              <div className="p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5 text-center">
+                <p className="text-xs text-white/30 uppercase">The Real Story</p>
+                <p className="text-sm text-white/70 mt-2 italic">
+                  Your system is compensating, not failing.
+                  <br />
+                  This pattern is stable — until it is not.
+                </p>
+              </div>
 
-              {/* 决策建议 */}
+              {/* 决策层 */}
               {d.decision.actions.length > 0 && (
                 <div className="p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5">
                   <p className="text-xs text-white/30 uppercase">What You Should Do</p>
@@ -166,7 +222,6 @@ export default function Result() {
                 </div>
               )}
 
-              {/* 警告 */}
               {d.decision.warnings.length > 0 && (
                 <div className="p-4 border border-red-500/20 rounded-xl bg-red-500/5">
                   <p className="text-xs text-red-400 uppercase">Warnings</p>
@@ -178,7 +233,6 @@ export default function Result() {
                 </div>
               )}
 
-              {/* 禁忌 */}
               {d.decision.prohibitions.length > 0 && (
                 <div className="p-4 border border-white/10 rounded-xl">
                   <p className="text-xs text-white/30 uppercase">Avoid</p>
@@ -196,12 +250,9 @@ export default function Result() {
                 <p className="text-sm text-white/70 mt-1">{d.decision.recoveryProtocol}</p>
               </div>
 
-              {/* recovery_pathway */}
+              {/* 恢复路径 */}
               <div className="space-y-4">
-                <p className="text-xs text-white/30 uppercase tracking-widest">
-                  Your Recovery Pathway
-                </p>
-
+                <p className="text-xs text-white/30 uppercase tracking-widest">Your Recovery Pathway</p>
                 {(['phase_1', 'phase_2', 'phase_3'] as const).map((phase) => {
                   const p = d.recovery_pathway[phase];
                   return (
@@ -209,50 +260,31 @@ export default function Result() {
                       <p className="text-xs text-white/30 uppercase">{p.label}</p>
                       <p className="text-sm text-white/70 mt-1">{p.action}</p>
                       {p.product && (
-                        <p className="text-xs text-[#C4A862] mt-1">
-                          → {p.product.name}
-                        </p>
+                        <p className="text-xs text-[#C4A862] mt-1">→ {p.product.name}</p>
                       )}
                     </div>
                   );
                 })}
               </div>
 
-              {/* V2.5 分享引擎（核心新增） */}
+              {/* Narrative + Share */}
               <div className="mt-8 border-t border-white/10 pt-6">
                 <p className="text-xs text-white/20 italic text-center">
-                  Most people don&apos;t see this clearly about themselves.
+                  This is your pattern. Not your identity.
                 </p>
-
-                {/* 叙事种子 + 身份角度 */}
-                <div className="mt-4 p-4 border border-white/10 rounded-xl">
-                  <p className="text-xs text-white/30 uppercase">Your Narrative</p>
-                  <p className="text-sm text-white/70 mt-2">
-                    {d.narrative_seed}
-                  </p>
-                  <p className="text-xs text-[#C4A862] mt-2">
-                    {d.share_angle}
-                  </p>
+                <div className="mt-4 p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5 text-center">
+                  <p className="text-xs text-white/30 uppercase tracking-widest">Your Identity</p>
+                  <p className="text-lg text-[#C4A862] font-light mt-2">{d.narrative.share_identity}</p>
+                  <p className="text-sm text-white/50 mt-2 italic">"{d.narrative.share_sentence}"</p>
+                  <p className="text-xs text-white/30 mt-3">Load Index: {d.user_profile.intensity_score}</p>
                 </div>
 
-                {/* Share Button */}
                 <button
                   onClick={handleShare}
-                  className="mt-6 w-full px-8 py-3 bg-white text-black rounded-full font-medium hover:opacity-90 transition"
+                  className="mt-6 w-full py-3 rounded-xl border border-white/20 text-white text-sm hover:bg-white/5 transition"
                 >
-                  Share My System Report →
+                  📤 Share My Pattern
                 </button>
-
-                {/* 底层传播结构提示 */}
-                <div className="mt-4 p-3 border border-dashed border-white/5 rounded-xl">
-                  <p className="text-[10px] text-white/20 leading-relaxed">
-                    {d.share_angle}
-                    <br />
-                    {d.narrative_seed}
-                    <br />
-                    Load Index: {d.user_profile.intensity_score} · Pattern: Compensated Collapse State
-                  </p>
-                </div>
               </div>
             </div>
           )}
