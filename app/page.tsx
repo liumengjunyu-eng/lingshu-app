@@ -14,14 +14,25 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0B0F14] text-white flex flex-col items-center justify-center px-6 relative overflow-hidden">
 
-      {/* ===== 背景光晕（升级：增加呼吸动画） ===== */}
+      {/* ===== 背景光晕（双层呼吸） ===== */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#D6B36A]/5 rounded-full blur-3xl animate-breath-glow" />
       <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] bg-[#D6B36A]/3 rounded-full blur-3xl animate-breath-glow-delayed" />
+
+      {/* ===== 微纹理 ===== */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
+        <div className="w-full h-full" style={{
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px',
+        }} />
+      </div>
 
       {/* HERO */}
       <div className="max-w-3xl mx-auto text-center relative z-10">
         
-        {/* ===== 品牌标识（带符号） ===== */}
+        {/* ===== 品牌标识 + 符号 ===== */}
         <div 
           className="flex items-center justify-center gap-3 mb-8"
           style={{ 
@@ -34,22 +45,25 @@ export default function HomePage() {
             <span className="text-[#D6B36A] text-xs">◈</span>
           </div>
           <span className="text-[#D6B36A] text-sm tracking-[0.2em] font-light">LINGSHU</span>
-          <span className="text-[#4A4A4A] text-xs tracking-[0.2em]">·</span>
+          <span className="text-[#4A4A4A] text-xs">·</span>
           <span className="text-[#6A6A6A] text-sm tracking-[0.2em] font-light">SYSTEM ANALYSIS</span>
         </div>
 
-        {/* ===== 主标题（增加进入感） ===== */}
+        {/* ===== 主标题（金色词单独强调） ===== */}
         <h1 
-          className="font-serif text-[clamp(40px,5.5vw,64px)] font-light leading-[1.08] tracking-tight"
+          className="font-serif text-[clamp(44px,5.5vw,68px)] font-light leading-[1.08] tracking-tight"
           style={{ 
             opacity: loaded ? 1 : 0, 
             transform: loaded ? 'translateY(0)' : 'translateY(20px)',
             transition: 'all 0.8s ease-out 200ms'
           }}
         >
-          Your system is
+          Your Life Is A System.
           <br />
-          <span className="text-[#D6B36A]">always speaking.</span>
+          <span className="text-[#D6B36A]">Health, Energy, Relationships,</span>
+          <br />
+          <span className="text-white/90">Decisions — </span>
+          <span className="text-[#D6B36A]">They Are Connected.</span>
         </h1>
 
         {/* ===== 副标题 ===== */}
@@ -61,10 +75,12 @@ export default function HomePage() {
             transition: 'all 0.8s ease-out 400ms'
           }}
         >
-          We help you listen.
+          Ancient Wisdom <span className="text-white/20">+</span> AI Pattern Recognition
+          <br />
+          <span className="text-white/30">Discover the hidden patterns shaping your life.</span>
         </p>
 
-        {/* ===== CTA ===== */}
+        {/* ===== CTA（微交互增强） ===== */}
         <div 
           className="mt-10"
           style={{ 
@@ -75,17 +91,18 @@ export default function HomePage() {
         >
           <button
             onClick={() => router.push('/diagnose')}
-            className="px-12 py-4 bg-[#D6B36A] text-[#0A0A0A] rounded-full font-medium hover:bg-[#B38A3D] transition-all duration-300 text-sm tracking-wide hover:scale-105"
+            className="px-12 py-4 bg-[#D6B36A] text-[#0A0A0A] rounded-full font-medium transition-all duration-300 text-sm tracking-wide relative overflow-hidden group hover:scale-105"
           >
-            Start Free Check
+            <span className="relative z-10">Start Free Analysis</span>
+            <div className="absolute inset-0 bg-[#B38A3D] translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
           </button>
-          <p className="text-white/30 text-sm mt-5 font-light tracking-wider">
-            Free · 2 minutes
+          <p className="text-white/25 text-sm mt-5 font-light tracking-wider">
+            Free · 2 minutes · No signup
           </p>
         </div>
       </div>
 
-      {/* ===== 滚动指示器（增强视觉信号） ===== */}
+      {/* ===== 滚动指示器 ===== */}
       <div 
         className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
         style={{ 
@@ -98,69 +115,6 @@ export default function HomePage() {
         <div className="w-0.5 h-12 bg-gradient-to-b from-[#D6B36A]/30 to-transparent rounded-full overflow-hidden">
           <div className="w-full h-1/2 bg-[#D6B36A]/50 animate-scroll-indicator" />
         </div>
-      </div>
-
-      {/* 分隔 */}
-      <div className="absolute top-full w-full mt-12 border-t border-white/5 pt-10 space-y-6 px-6">
-
-        {/* What we analyze */}
-        <div className="max-w-xl mx-auto text-center">
-          <h2 className="text-[14px] text-white/40 mb-3 tracking-wide">
-            What we analyze
-          </h2>
-
-          <p className="text-[14px] text-white/60 leading-relaxed">
-            Body recovery · Mental load · Emotional pressure
-          </p>
-
-          <p className="text-[12px] text-white/25 mt-2">
-            Not personality. Not fortune telling. System patterns.
-          </p>
-        </div>
-
-        {/* difference */}
-        <div className="max-w-xl mx-auto">
-          <h2 className="text-[14px] text-white/40 mb-3 tracking-wide text-center">
-            Why this feels different
-          </h2>
-
-          <div className="grid grid-cols-3 gap-2 text-[12px] text-white/50">
-            <div className="border border-white/5 rounded-lg p-3 text-center">
-              Labels you
-            </div>
-            <div className="border border-white/5 rounded-lg p-3 text-center">
-              Describes you
-            </div>
-            <div className="border border-[#D6B36A]/20 rounded-lg p-3 text-[#D6B36A] text-center">
-              Maps your system
-            </div>
-          </div>
-        </div>
-
-        {/* preview card */}
-        <div className="max-w-xl mx-auto border border-white/10 rounded-xl p-5 bg-white/[0.02]">
-          <h2 className="text-[14px] text-white/40 mb-4 text-center">
-            Your result preview
-          </h2>
-
-          <div className="space-y-2 text-[13px] font-mono text-white/60">
-            <p>System Load: <span className="text-[#D6B36A]">72</span></p>
-            <p>Primary Pattern: Compensated State</p>
-            <p>Main Signal: High output / Low recovery</p>
-            <p>Element trend: Fire ↑ Water ↓</p>
-          </div>
-        </div>
-
-        {/* final CTA */}
-        <div className="max-w-xl mx-auto pb-20">
-          <button
-            onClick={() => router.push('/diagnose')}
-            className="w-full py-3 rounded-full border border-[#D6B36A]/30 text-[#D6B36A] hover:bg-[#D6B36A] hover:text-black transition"
-          >
-            Reveal My System
-          </button>
-        </div>
-
       </div>
 
       {/* ===== CSS 动画 ===== */}
