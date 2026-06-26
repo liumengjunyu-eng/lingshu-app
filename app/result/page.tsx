@@ -552,19 +552,28 @@ export default function Result() {
                     </div>
                   </div>
 
-                  {/* Ω: Reality Interpretation Layer */}
-                  <div className="mt-2 text-center">
-                    <div className="p-1.5 border border-white/[0.01] rounded-xl bg-white/[0.002]">
-                      <p className="text-[8px] text-white/10">
-                        Reality interpretation engine active
-                      </p>
-                      <p className="text-[#C4A862] text-[9px] mt-1">
-                        Your perception is being updated in real time
-                      </p>
-                      <p className="text-white/[0.07] text-[8px] mt-0.5">
-                        Probability of reinterpretation: 0.78
-                      </p>
+                  {/* Ω+: Meta Reality Layer — Multiple Interpretations */}
+                  <div className="mt-2 p-2 border border-white/[0.04] rounded-xl bg-white/[0.008]">
+                    <p className="text-[8px] text-white/15 text-center">
+                      Multiple interpretations detected — reality selected by interaction
+                    </p>
+                    <div className="mt-1.5 space-y-1">
+                      <div className="p-1.5 border border-white/10 rounded text-[9px] leading-relaxed bg-white/[0.02]">
+                        <span className="text-white/30">Ω-A:</span>{' '}
+                        <span className="text-white/50">Stable recovery possible</span>
+                      </div>
+                      <div className="p-1.5 border border-white/10 rounded text-[9px] leading-relaxed bg-white/[0.02]">
+                        <span className="text-white/30">Ω-B:</span>{' '}
+                        <span className="text-white/50">Structural collapse risk</span>
+                      </div>
+                      <div className="p-1.5 border border-[#C4A862]/40 rounded text-[9px] leading-relaxed bg-[#C4A862]/[0.03]">
+                        <span className="text-[#C4A862] font-medium">Ω-C:</span>{' '}
+                        <span className="text-[#C4A862]/70">Transformation in progress (selected)</span>
+                      </div>
                     </div>
+                    <p className="text-[7px] text-white/[0.06] text-center mt-1">
+                      Reality locked based on your interaction pattern
+                    </p>
                   </div>
                 </div>
               )}
