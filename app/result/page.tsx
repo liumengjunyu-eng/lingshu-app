@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Lock } from 'lucide-react';
 import type { V2Output } from '@/lib/symbol/v2/types';
 
 export default function Result() {
@@ -23,6 +22,15 @@ export default function Result() {
   }, []);
 
   const handleUnlock = () => setUnlocked(true);
+
+  const handleShare = () => {
+    if (!data) return;
+    navigator.share?.({
+      title: 'My System Report',
+      text: data.narrative_seed,
+      url: window.location.href,
+    });
+  };
 
   if (loading) {
     return (
@@ -50,18 +58,19 @@ export default function Result() {
   return (
     <main className="min-h-screen bg-[#1A1A1A] text-white px-6 py-12">
       <div className="max-w-2xl mx-auto">
+
         {/* ============================================================
         免费层：冲击诊断
         ============================================================ */}
 
-        {/* A. System Load Index */}
+        {/* Score */}
         <div className="text-center">
           <h1 className="text-2xl font-light">Your System State</h1>
           <p className="text-[#C4A862] text-6xl font-light mt-2">{d.user_profile.intensity_score}</p>
           <p className="text-white/30 text-sm mt-1">System Load Index</p>
         </div>
 
-        {/* B. 冲击诊断标签 */}
+        {/* 冲击标签 */}
         <div className="mt-6 border border-[#C4A862]/30 rounded-xl p-6 bg-[#C4A862]/5 text-center">
           <p className="text-xs text-white/30 tracking-widest uppercase">System State</p>
           <p className="text-xl text-[#C4A862] font-light mt-1">
@@ -70,7 +79,6 @@ export default function Result() {
           <p className="text-sm text-white/40 mt-2 max-w-sm mx-auto">
             You are still functioning. Your system is paying for it in the background.
           </p>
-          {/* ⭐ V2.3 Patch 1: 控制感出口 */}
           <p className="text-xs text-white/20 mt-4 italic">
             This is a system pattern. It can be mapped — but not solved for free.
           </p>
@@ -79,7 +87,7 @@ export default function Result() {
           </p>
         </div>
 
-        {/* C. 身体 + 情绪摘要 */}
+        {/* 身体 + 情绪摘要 */}
         <div className="mt-6 grid grid-cols-2 gap-4">
           <div className="p-4 border border-white/10 rounded-xl">
             <p className="text-xs text-white/30 uppercase">Body</p>
@@ -93,7 +101,7 @@ export default function Result() {
           </div>
         </div>
 
-        {/* D. 7天风险预告 */}
+        {/* 7天风险预告 */}
         <div className="mt-6 p-4 border border-white/10 rounded-xl bg-white/5">
           <p className="text-xs text-white/30 uppercase">Risk Signal</p>
           <p className="text-sm text-[#C4A862] mt-1 font-light">{d.forecast['7_days']}</p>
@@ -103,38 +111,31 @@ export default function Result() {
         </div>
 
         {/* ============================================================
-        付费锁定层
+        Paywall + Share 合体（V2.5核心）
         ============================================================ */}
         <div className="mt-10 border-t border-white/10 pt-8">
+
+          {/* --- 未解锁：付费墙 --- */}
           {!unlocked ? (
-            /* --- 锁定状态 --- */
             <div className="text-center">
-              <div className="flex justify-center mb-4">
-                <Lock className="w-8 h-8 text-[#C4A862]/40" />
-              </div>
-              <h2 className="text-xl font-light text-white/80">
-                What Happens If You Do Nothing
+              <h2 className="text-xl font-light">
+                Free report shows <span className="text-white/60">WHAT</span> is happening.
               </h2>
-              <p className="text-white/40 text-sm mt-2 max-w-sm mx-auto">
-                Your 7-day, 30-day, and 90-day trajectory. See the full recovery pathway.
+              <p className="text-sm text-white/40 mt-2">
+                Paid report shows <span className="text-[#C4A862]">WHY</span> it is happening — and what breaks next.
               </p>
-              {/* ⭐ V2.3 Patch 2: 对比结构 */}
-              <p className="text-xs text-white/20 mt-3 italic leading-relaxed max-w-xs mx-auto">
-                Free report shows WHAT is happening.
-                <br />
-                Paid report shows WHY it is happening — and what breaks next.
-              </p>
+
               <button
                 onClick={handleUnlock}
                 className="mt-6 px-8 py-3 bg-[#C4A862] text-[#1A1A1A] rounded-full font-medium hover:opacity-90 transition"
               >
-                See What Will Happen Next If You Do Nothing →
+                Unlock Full System Map — $9.99 →
               </button>
-              <p className="text-xs text-white/20 mt-3">One-time payment. No subscription.</p>
             </div>
           ) : (
-            /* --- 解锁后：决策 + 恢复路径 + 产品 --- */
+            /* --- 解锁后：决策 + 恢复路径 + 分享引擎（V2.5核心） --- */
             <div className="space-y-6">
+
               {/* 决策建议 */}
               {d.decision.actions.length > 0 && (
                 <div className="p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5">
@@ -177,95 +178,62 @@ export default function Result() {
                 <p className="text-sm text-white/70 mt-1">{d.decision.recoveryProtocol}</p>
               </div>
 
-              {/* ⭐ V2.2核心：恢复路径 + 产品（null 安全） */}
+              {/* recovery_pathway */}
               <div className="space-y-4">
                 <p className="text-xs text-white/30 uppercase tracking-widest">
                   Your Recovery Pathway
                 </p>
 
-                {/* Phase 1 */}
-                <div className="p-4 border border-white/10 rounded-xl">
-                  <p className="text-xs text-white/30 uppercase">{d.recovery_pathway.phase_1.label}</p>
-                  <p className="text-sm text-white/70 mt-1">{d.recovery_pathway.phase_1.action}</p>
-                  {d.recovery_pathway.phase_1.product && (
-                    <p className="text-xs text-[#C4A862] mt-1">
-                      → {d.recovery_pathway.phase_1.product.name}
-                    </p>
-                  )}
-                </div>
-
-                {/* Phase 2 */}
-                <div className="p-4 border border-white/10 rounded-xl">
-                  <p className="text-xs text-white/30 uppercase">{d.recovery_pathway.phase_2.label}</p>
-                  <p className="text-sm text-white/70 mt-1">{d.recovery_pathway.phase_2.action}</p>
-                  {d.recovery_pathway.phase_2.product && (
-                    <p className="text-xs text-[#C4A862] mt-1">
-                      → {d.recovery_pathway.phase_2.product.name}
-                    </p>
-                  )}
-                </div>
-
-                {/* Phase 3 */}
-                <div className="p-4 border border-white/10 rounded-xl">
-                  <p className="text-xs text-white/30 uppercase">{d.recovery_pathway.phase_3.label}</p>
-                  <p className="text-sm text-white/70 mt-1">{d.recovery_pathway.phase_3.action}</p>
-                  {d.recovery_pathway.phase_3.product && (
-                    <p className="text-xs text-[#C4A862] mt-1">
-                      → {d.recovery_pathway.phase_3.product.name}
-                    </p>
-                  )}
-                </div>
+                {(['phase_1', 'phase_2', 'phase_3'] as const).map((phase) => {
+                  const p = d.recovery_pathway[phase];
+                  return (
+                    <div key={phase} className="p-4 border border-white/10 rounded-xl">
+                      <p className="text-xs text-white/30 uppercase">{p.label}</p>
+                      <p className="text-sm text-white/70 mt-1">{p.action}</p>
+                      {p.product && (
+                        <p className="text-xs text-[#C4A862] mt-1">
+                          → {p.product.name}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* ⭐ V2.4 Share Engine View */}
+              {/* V2.5 分享引擎（核心新增） */}
               <div className="mt-8 border-t border-white/10 pt-6">
                 <p className="text-xs text-white/20 italic text-center">
                   Most people don&apos;t see this clearly about themselves.
                 </p>
 
-                {/* Identity Card Preview */}
-                <div className="mt-4 p-4 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5">
-                  <p className="text-xs text-white/30 uppercase tracking-widest">Share Identity</p>
+                {/* 叙事种子 + 身份角度 */}
+                <div className="mt-4 p-4 border border-white/10 rounded-xl">
+                  <p className="text-xs text-white/30 uppercase">Your Narrative</p>
                   <p className="text-sm text-white/70 mt-2">
-                    {d.share?.card.title}
+                    {d.narrative_seed}
                   </p>
-                  <p className="text-xs text-white/40 mt-1">
-                    {d.share?.card.subtitle}
-                  </p>
-                  <p className="text-xs text-[#C4A862] mt-1">
-                    Load Index: {d.share?.card.score}
+                  <p className="text-xs text-[#C4A862] mt-2">
+                    {d.share_angle}
                   </p>
                 </div>
 
-                {/* Copy Actions */}
-                <div className="mt-4 space-y-2">
-                  <button
-                    onClick={() => navigator.clipboard.writeText(d.share?.twitter.text ?? '')}
-                    className="w-full py-2 rounded-xl border border-white/10 text-white text-sm hover:border-white/20 transition"
-                  >
-                    📋 Copy X Post
-                  </button>
+                {/* Share Button */}
+                <button
+                  onClick={handleShare}
+                  className="mt-6 w-full px-8 py-3 bg-white text-black rounded-full font-medium hover:opacity-90 transition"
+                >
+                  Share My System Report →
+                </button>
 
-                  <button
-                    onClick={() => navigator.clipboard.writeText(`Hook: ${d.share?.tiktok.hook}\n\n${d.share?.tiktok.body}\n\n${d.share?.tiktok.closing}`)}
-                    className="w-full py-2 rounded-xl border border-white/10 text-white text-sm hover:border-white/20 transition"
-                  >
-                    📋 Copy TikTok Script
-                  </button>
-
-                  <button
-                    onClick={() => navigator.clipboard.writeText(d.share?.instagram.caption ?? '')}
-                    className="w-full py-2 rounded-xl border border-white/10 text-white text-sm hover:border-white/20 transition"
-                  >
-                    📋 Copy IG Caption
-                  </button>
-
-                  <button
-                    onClick={() => {/* 后续接入 canvas-to-image */}}
-                    className="w-full py-2 bg-[#C4A862] text-black rounded-xl text-sm font-medium hover:opacity-90 transition"
-                  >
-                    💾 Save Identity Card
-                  </button>
+                {/* 底层传播结构提示 */}
+                <div className="mt-4 p-3 border border-dashed border-white/5 rounded-xl">
+                  <p className="text-[10px] text-white/20 leading-relaxed">
+                    {d.share_angle}
+                    <br />
+                    {d.narrative_seed}
+                    <br />
+                    Load Index: {d.user_profile.intensity_score} · Pattern: Compensated Collapse State
+                  </p>
                 </div>
               </div>
             </div>

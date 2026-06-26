@@ -80,4 +80,7 @@ export interface V2Output {
     instagram: { caption: string };
     card: { title: string; subtitle: string; score: number };
   };
+  // V2.5 增长字段：传播与表达层
+  narrative_seed: string;
+  share_angle: string;
 }

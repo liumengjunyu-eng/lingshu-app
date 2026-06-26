@@ -143,6 +143,21 @@ export function runSymbolEngineV2(input: SymptomInput): V2Output {
   else if (energyLevel < 40 && stressLevel > 60) archetype = 'Depleted High Performer';
   else if (moodStability < 40 && focusLevel < 50) archetype = 'Unstable Focus Type';
 
+  const narrative_seed_pool = [
+    "I thought I was just tired. Turns out I've been running a broken system.",
+    "I didn't know burnout could be this silent.",
+    "This explained me better than anything I've ever taken.",
+    "I wasn't lazy. I was overloaded.",
+    "I finally understood what my body was trying to say."
+  ];
+
+  const share_angle_pool = [
+    "High Functioning Collapse",
+    "Silent Burnout Pattern",
+    "Cognitive Overload Type",
+    "Emotional Compression State"
+  ];
+
   return {
     user_profile: { archetype, intensity_score },
     body_system: { energy_level, fatigue_type, sleep_quality },
@@ -164,5 +179,8 @@ export function runSymbolEngineV2(input: SymptomInput): V2Output {
       archetype,
       risk: forecast['7_days'],
     }),
+    // V2.5 增长字段
+    narrative_seed: narrative_seed_pool[Math.floor(Math.random() * narrative_seed_pool.length)],
+    share_angle: share_angle_pool[Math.floor(Math.random() * share_angle_pool.length)],
   };
 }
