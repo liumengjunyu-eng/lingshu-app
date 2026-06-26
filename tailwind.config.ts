@@ -12,16 +12,16 @@ const config: Config = {
         sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
-        'pulse-slow': 'pulse-slow 4s ease-in-out infinite',
-        'fade-up': 'fade-up 0.6s ease-out forwards',
+        breath: 'breath 4s ease-in-out infinite',
+        'fade-up': 'fade-up 0.7s ease-out forwards',
       },
       keyframes: {
-        'pulse-slow': {
-          '0%, 100%': { transform: 'scale(1)', opacity: '0.2' },
-          '50%': { transform: 'scale(1.4)', opacity: '0.5' },
+        breath: {
+          '0%, 100%': { opacity: '0.15', transform: 'scale(1)' },
+          '50%': { opacity: '0.35', transform: 'scale(1.08)' },
         },
         'fade-up': {
-          from: { opacity: '0', transform: 'translateY(12px)' },
+          from: { opacity: '0', transform: 'translateY(16px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
       },
