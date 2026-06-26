@@ -5,8 +5,9 @@
 
 import { useEffect, useState } from 'react';
 import { loadGraph, computeSummary, simulateLifePath, getSimulationAdvice } from '@/lib/lifegraph';
-import { LifeGraph, LifeGraphSummary, SimulationResult, EnvironmentAssessment } from '@/lib/lifegraph';
+import { LifeGraph, LifeGraphSummary, SimulationResult, EnvironmentAssessment, SymbolicForecast } from '@/lib/lifegraph';
 import { assessEnvironment, findCity } from '@/lib/lifegraph/environment';
+import { generateForecast } from '@/lib/lifegraph/forecast';
 import Link from 'next/link';
 
 export default function LifeGraphPage() {
@@ -16,6 +17,7 @@ export default function LifeGraphPage() {
   const [environment, setEnvironment] = useState<EnvironmentAssessment | null>(null);
   const [cityInput, setCityInput] = useState('');
   const [showCityInput, setShowCityInput] = useState(false);
+  const [forecast, setForecast] = useState<SymbolicForecast | null>(null);
 
   useEffect(() => {
     const g = loadGraph();
@@ -26,6 +28,7 @@ export default function LifeGraphPage() {
       if (lastNode) {
         setSimulation(simulateLifePath(lastNode));
         setEnvironment(assessEnvironment(lastNode));
+        setForecast(generateForecast(lastNode, g));
       }
     }
   }, []);
@@ -309,6 +312,81 @@ export default function LifeGraphPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Symbolic Forecast Section */}
+        {forecast && (
+          <div className="mt-12">
+            <div className="mb-6">
+              <div className="text-forest/40 text-xs tracking-[0.2em] uppercase">Symbolic Forecast</div>
+              <h2 className="font-sans font-bold text-ink text-2xl mt-1">What&rsquo;s Coming</h2>
+              <p className="text-ink/40 text-sm mt-1">System-level projection based on your current energy signature.</p>
+            </div>
+
+            {/* Summary */}
+            <div className="bg-cream rounded-2xl p-6 border border-forest/5 mb-6">
+              <p className="text-ink/70 text-sm leading-relaxed">{forecast.summary}</p>
+            </div>
+
+            {/* Three windows */}
+            <div className="grid md:grid-cols-3 gap-4">
+              {[
+                { window: forecast.next7Days, label: 'Next 7 Days', sub: 'Immediate horizon' },
+                { window: forecast.next30Days, label: 'Next 30 Days', sub: 'Short-term trajectory' },
+                { window: forecast.next90Days, label: 'Next 90 Days', sub: 'System evolution' },
+              ].map((item, i) => (
+                <div key={i} className="bg-white rounded-2xl p-6 border border-forest/5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-ink">{item.label}</div>
+                      <div className="text-xs text-ink/30">{item.sub}</div>
+                    </div>
+                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${
+                      item.window.riskLevel === 'critical' ? 'bg-red-50 text-red-500' :
+                      item.window.riskLevel === 'high' ? 'bg-orange-50 text-orange-500' :
+                      item.window.riskLevel === 'medium' ? 'bg-amber-50 text-amber-600' :
+                      'bg-green-50 text-forest'
+                    }`}>
+                      {item.window.riskLabel.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Trend indicator */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-sm ${
+                      item.window.energyTrend === 'improving' ? 'text-forest' :
+                      item.window.energyTrend === 'declining' ? 'text-red-400' :
+                      item.window.energyTrend === 'volatile' ? 'text-amber-500' :
+                      'text-ink/40'
+                    }`}>
+                      {item.window.energyTrend === 'improving' ? '↑' :
+                       item.window.energyTrend === 'declining' ? '↓' :
+                       item.window.energyTrend === 'volatile' ? '~' : '→'}
+                    </span>
+                    <span className="text-xs text-ink/50 capitalize">{item.window.energyTrend} energy</span>
+                  </div>
+
+                  <p className="text-xs text-ink/50 leading-relaxed mb-3">{item.window.recommendedAction}</p>
+
+                  {/* Identity shift probability */}
+                  <div className="border-t border-forest/5 pt-3 mt-3">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-ink/30">Identity shift</span>
+                      <span className={`font-medium ${
+                        item.window.identityShiftProbability > 0.5 ? 'text-gold' : 'text-ink/40'
+                      }`}>
+                        {Math.round(item.window.identityShiftProbability * 100)}%
+                      </span>
+                    </div>
+                    <div className="mt-1 h-1.5 bg-forest/5 rounded-full overflow-hidden">
+                      <div className="h-full bg-gold rounded-full transition-all"
+                        style={{width: `${item.window.identityShiftProbability * 100}%`}} />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
