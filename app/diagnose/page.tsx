@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { saveSession } from '@/lib/core/session';
 
 const STEPS = [
  {
@@ -55,28 +56,28 @@ export default function DiagnosePage() {
  const initialInput = searchParams.get('input') || '';
  const [step, setStep] = useState(0);
  const [answers, setAnswers] = useState<number[]>([]);
- const [selectedTexts, setSelectedTexts] = useState<string[]>([]);
+ const [texts, setTexts] = useState<string[]>([]);
 
  const current = STEPS[step];
 
  const selectOption = (text: string) => {
- const score = SCORE_MAP[text] || 50;
+ const score = SCORE_MAP[text] ?? 50;
  const newAnswers = [...answers, score];
- const newTexts = [...selectedTexts, text];
+ const newTexts = [...texts, text];
  setAnswers(newAnswers);
- setSelectedTexts(newTexts);
+ setTexts(newTexts);
 
  if (step < STEPS.length - 1) {
  setTimeout(() => setStep(step + 1), 250);
  } else {
- // 完成
  const avg = newAnswers.reduce((a, b) => a + b, 0) / newAnswers.length;
- localStorage.setItem('diagnosis_data', JSON.stringify({
+ saveSession({
  input: initialInput,
  answers: newAnswers,
  texts: newTexts,
  score: Math.round(avg),
- }));
+ timestamp: Date.now(),
+ });
  router.push('/result');
  }
  };
@@ -84,7 +85,7 @@ export default function DiagnosePage() {
  return (
  <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
  <div className="max-w-xl w-full">
- {/* 进度 */}
+ {/* 进度条 */}
  <div className="flex gap-1 mb-6 justify-center">
  {STEPS.map((_, i) => (
  <div
@@ -100,16 +101,14 @@ export default function DiagnosePage() {
  {step + 1} / {STEPS.length}
  </p>
 
- {/* 问题 */}
  <h2 className="text-title font-light text-white text-center leading-relaxed">
  {current.question}
  </h2>
 
- {/* 选项 */}
  <div className="mt-6 space-y-2">
- {current.options.map((opt, i) => (
+ {current.options.map((opt) => (
  <button
- key={i}
+ key={opt}
  onClick={() => selectOption(opt)}
  className="w-full p-4 text-body text-white/60 border border-white/5 rounded-xl hover:border-gold/30 hover:text-white/90 transition text-left"
  >

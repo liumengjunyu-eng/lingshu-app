@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSession } from '@/lib/core/session';
 
 export default function ResultPage() {
  const router = useRouter();
@@ -9,10 +10,9 @@ export default function ResultPage() {
  const [loaded, setLoaded] = useState(false);
 
  useEffect(() => {
- const raw = localStorage.getItem('diagnosis_data');
- if (raw) {
- const parsed = JSON.parse(raw);
- const score = parsed.score || 65;
+ const session = getSession();
+ if (session) {
+ const score = session.score;
  setData({
  score,
  label: score > 70 ? 'Compensated Collapse State' : 'Delayed Stabilization Pattern',
@@ -51,13 +51,11 @@ export default function ResultPage() {
  return (
  <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
  <div className="max-w-xl w-full text-center animate-fade-up">
- {/* 分数 */}
  <p className="text-[72px] font-light text-gold leading-none tracking-tight">
  {data.score}
  </p>
  <p className="text-meta text-white/20 mt-1">System Load Index</p>
 
- {/* 标签 */}
  <div className="mt-10 border border-gold/20 rounded-xl p-8 bg-gold/5">
  <p className="text-title font-light text-gold">{data.label}</p>
  <p className="text-body text-white/40 mt-3 leading-relaxed">
@@ -65,10 +63,14 @@ export default function ResultPage() {
  </p>
  </div>
 
- {/* 唯一动作 */}
+ {/* ⭐ 信任锚点（新增） */}
+ <p className="text-meta text-white/15 mt-4 max-w-sm mx-auto leading-relaxed">
+ This is not a personality test. It is a system pattern recognition model.
+ </p>
+
  <button
  onClick={() => router.push('/paywall')}
- className="mt-10 w-full py-3 border border-gold/30 text-gold rounded-full hover:bg-gold hover:text-bg transition text-body"
+ className="mt-8 w-full py-3 border border-gold/30 text-gold rounded-full hover:bg-gold hover:text-bg transition text-body"
  >
  What lies beneath →
  </button>

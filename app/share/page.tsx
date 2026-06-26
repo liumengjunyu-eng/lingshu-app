@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSession } from '@/lib/core/session';
 
 const SHARE_SENTENCES = [
  "I didn't realize I was compensating until I saw the system map.",
  'My system is running on borrowed recovery.',
  'The diagnosis: high output, low restoration.',
- "I thought I was fine. My system disagreed.",
+ 'I thought I was fine. My system disagreed.',
  'Recovery debt is real. I just checked mine.',
 ];
 
@@ -17,12 +18,12 @@ export default function SharePage() {
  const [sentence, setSentence] = useState('');
 
  useEffect(() => {
- const raw = localStorage.getItem('diagnosis_data');
- if (raw) {
- const parsed = JSON.parse(raw);
+ const session = getSession();
+ if (session) {
+ const score = session.score;
  setState({
- score: parsed.score || 65,
- label: parsed.score > 70 ? 'Compensated Collapse State' : 'Delayed Stabilization Pattern',
+ score,
+ label: score > 70 ? 'Compensated Collapse State' : 'Delayed Stabilization Pattern',
  });
  }
  setSentence(SHARE_SENTENCES[Math.floor(Math.random() * SHARE_SENTENCES.length)]);
@@ -36,7 +37,15 @@ export default function SharePage() {
  );
  }
 
- const shareText = `${state.label} — Load Index: ${state.score}\n\n"${sentence}"\n\nFind your system state → linglife.vercel.app`;
+ const shareText = `
+SYSTEM REPORT
+Type: ${state.label}
+Load Index: ${state.score}
+
+"${sentence}"
+
+→ Test yours: linglife.vercel.app
+`;
 
  return (
  <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">

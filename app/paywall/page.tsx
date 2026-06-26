@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSession } from '@/lib/core/session';
 
 export default function PaywallPage() {
  const router = useRouter();
  const [unlocked, setUnlocked] = useState(false);
- const [data, setData] = useState<any>(null);
+ const [score, setScore] = useState<number>(65);
 
  useEffect(() => {
- const raw = localStorage.getItem('diagnosis_data');
- if (raw) {
- const parsed = JSON.parse(raw);
- setData(parsed);
+ const session = getSession();
+ if (session) {
+ setScore(session.score);
  }
  }, []);
 
@@ -25,7 +25,7 @@ export default function PaywallPage() {
  <div className="border border-white/5 rounded-xl p-5 space-y-3 bg-white/5">
  <div className="flex justify-between text-body text-white/60">
  <span>System Load</span>
- <span className="text-gold">{data?.score || 65}/100</span>
+ <span className="text-gold">{score}/100</span>
  </div>
  <div className="flex justify-between text-body text-white/60">
  <span>Recovery Protocol</span>
