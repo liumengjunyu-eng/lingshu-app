@@ -348,7 +348,15 @@ function generateHook(_elements: any, dominant: string) {
 }
 
 // ============================================================
-// 7. 主入口
+// 7. V5 增长系统注入
+// ============================================================
+
+import { generateSharePayload } from './v5/shareEngine';
+import { buildIdentity } from './v5/identity';
+import { computeGrowthLoop } from './v5/growthLoop';
+
+// ============================================================
+// 8. 主入口
 // ============================================================
 
 export function runSymbolEngine(input: HumanInput): SymbolOutput {
@@ -364,7 +372,8 @@ export function runSymbolEngine(input: HumanInput): SymbolOutput {
    (fiveElements as any).wood + (fiveElements as any).fire + (fiveElements as any).earth + (fiveElements as any).metal + (fiveElements as any).water - 250
  );
 
- return {
+ // V4 基础输出
+ const baseOutput = {
    fiveElements,
    bodyDiagnosis,
    emotionProfile,
@@ -376,5 +385,17 @@ export function runSymbolEngine(input: HumanInput): SymbolOutput {
      balanceScore,
      timestamp: Date.now(),
    },
+ };
+
+ // V5 增长系统注入
+ const share = generateSharePayload(baseOutput);
+ const identity = buildIdentity(baseOutput);
+ const growth = computeGrowthLoop(baseOutput);
+
+ return {
+   ...baseOutput,
+   share,
+   identity,
+   growth,
  };
 }

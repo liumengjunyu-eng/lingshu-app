@@ -70,4 +70,36 @@ export interface V2Output {
     '30_days': string;
     '90_days': string;
   };
+
+  // V5: Growth Engine
+  share?: {
+    title: string;
+    subtitle: string;
+    metrics: {
+      load: number;
+      state: string;
+      volatility: number;
+    };
+    warning: string;
+    cta: string;
+  };
+
+  identity?: {
+    identity_line: string;
+    inner_state: string;
+    system_truth: string;
+    share_ready: boolean;
+  };
+
+  growth?: {
+    loopType: 'high_strain_viral' | 'reflection_viral' | 'curiosity_viral' | 'neutral';
+    shareProbability: number;
+    triggerText: string;
+    channelStrategy: {
+      tiktok: string;
+      youtube: string;
+      x: string;
+      instagram: string;
+    };
+  };
 }

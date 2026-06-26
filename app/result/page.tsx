@@ -434,6 +434,42 @@ export default function Result() {
                     <p className="text-xs text-white/10 text-center mt-4">{studio.share_link}</p>
                   )}
 
+                  {/* V5: Share Identity — 传播出口 */}
+                  {d.share && d.identity && d.growth && (
+                    <div className="mt-6 p-6 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5">
+                      <p className="text-xs text-white/30 uppercase">Share Identity</p>
+                      <p className="text-lg text-[#C4A862] mt-2">
+                        {d.identity.identity_line}
+                      </p>
+                      <p className="text-sm text-white/60 mt-2">
+                        {d.share.title}
+                      </p>
+                      <p className="text-xs text-white/30 mt-4">
+                        {d.share.warning}
+                      </p>
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className="text-xs text-white/40">
+                          Share probability: {Math.round(d.growth.shareProbability * 100)}%
+                        </span>
+                        <span className="text-xs text-white/20">|</span>
+                        <span className="text-xs text-[#C4A862]">
+                          {d.growth.loopType.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const text = `${d.identity.identity_line}\n\n${d.share.title}\n\n${d.share.warning}\n\n${window.location.href}`;
+                          navigator.clipboard.writeText(text);
+                          setCopied('v5-share');
+                          setTimeout(() => setCopied(''), 2000);
+                        }}
+                        className="mt-4 px-6 py-2 bg-[#C4A862] text-black rounded-full text-sm font-medium hover:opacity-90 transition"
+                      >
+                        {copied === 'v5-share' ? '✓ Copied!' : 'Share My System Report'}
+                      </button>
+                    </div>
+                  )}
+
                   {/* V3.3: Network & Factory Panel */}
                   <div className="mt-6">
                     <button
