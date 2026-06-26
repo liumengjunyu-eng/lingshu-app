@@ -5,13 +5,17 @@
 
 import { useEffect, useState } from 'react';
 import { loadGraph, computeSummary, simulateLifePath, getSimulationAdvice } from '@/lib/lifegraph';
-import { LifeGraph, LifeGraphSummary, SimulationResult } from '@/lib/lifegraph';
+import { LifeGraph, LifeGraphSummary, SimulationResult, EnvironmentAssessment } from '@/lib/lifegraph';
+import { assessEnvironment, findCity } from '@/lib/lifegraph/environment';
 import Link from 'next/link';
 
 export default function LifeGraphPage() {
   const [graph, setGraph] = useState<LifeGraph | null>(null);
   const [summary, setSummary] = useState<LifeGraphSummary | null>(null);
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
+  const [environment, setEnvironment] = useState<EnvironmentAssessment | null>(null);
+  const [cityInput, setCityInput] = useState('');
+  const [showCityInput, setShowCityInput] = useState(false);
 
   useEffect(() => {
     const g = loadGraph();
@@ -19,9 +23,19 @@ export default function LifeGraphPage() {
     if (g) {
       setSummary(computeSummary(g));
       const lastNode = g.nodes[g.nodes.length - 1];
-      if (lastNode) setSimulation(simulateLifePath(lastNode));
+      if (lastNode) {
+        setSimulation(simulateLifePath(lastNode));
+        setEnvironment(assessEnvironment(lastNode));
+      }
     }
   }, []);
+
+  const handleCitySearch = () => {
+    const g = loadGraph();
+    if (!g || !g.nodes.length) return;
+    const lastNode = g.nodes[g.nodes.length - 1];
+    setEnvironment(assessEnvironment(lastNode, cityInput));
+  };
 
   if (!graph || graph.nodes.length === 0) {
     return (
@@ -164,6 +178,140 @@ export default function LifeGraphPage() {
             </div>
           ))}
         </div>
+
+        {/* Relationship & Environment Section */}
+        {environment && (
+          <div className="mt-12">
+            <div className="mb-6">
+              <div className="text-forest/40 text-xs tracking-[0.2em] uppercase">Environment</div>
+              <h2 className="font-sans font-bold text-ink text-2xl mt-1">Your Ecosystem</h2>
+              <p className="text-ink/40 text-sm mt-1">How your relationships and environment affect your energy.</p>
+            </div>
+
+            {/* Overall score */}
+            <div className="bg-white rounded-2xl p-6 border border-forest/5 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-ink/50">Environment Score</div>
+                  <div className="text-3xl font-bold text-ink mt-1">{environment.overallEnvironmentScore}</div>
+                  <div className="text-xs text-ink/30 mt-0.5">100 = fully supportive ecosystem</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm">
+                    <span className="text-forest">{environment.relationshipSummary.nourishingCount}</span>
+                    <span className="text-ink/30"> nourishing / </span>
+                    <span className="text-red-400">{environment.relationshipSummary.drainingCount}</span>
+                    <span className="text-ink/30"> draining</span>
+                  </div>
+                  <div className={`text-xs mt-1 ${
+                    environment.relationshipSummary.dominantType === 'nourishing' ? 'text-forest' :
+                    environment.relationshipSummary.dominantType === 'draining' ? 'text-red-400' :
+                    'text-ink/30'
+                  }`}>
+                    {environment.relationshipSummary.dominantType.toUpperCase()} NETWORK
+                  </div>
+                </div>
+              </div>
+
+              {/* Mini bars */}
+              <div className="grid grid-cols-3 gap-4 mt-5">
+                <div>
+                  <div className="text-xs text-ink/30 mb-1">Workplace</div>
+                  <div className="h-2 bg-forest/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-forest rounded-full" style={{width: `${environment.workspaceEnergy}%`}} />
+                  </div>
+                  <div className="text-xs text-ink/40 mt-0.5">{environment.workspaceEnergy}/100</div>
+                </div>
+                <div>
+                  <div className="text-xs text-ink/30 mb-1">Home</div>
+                  <div className="h-2 bg-forest/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gold rounded-full" style={{width: `${environment.homeEnergy}%`}} />
+                  </div>
+                  <div className="text-xs text-ink/40 mt-0.5">{environment.homeEnergy}/100</div>
+                </div>
+                <div>
+                  <div className="text-xs text-ink/30 mb-1">City</div>
+                  <div className="h-2 bg-forest/5 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${
+                      (environment.currentCity?.recoveryScore || 50) > 60 ? 'bg-forest' :
+                      (environment.currentCity?.recoveryScore || 50) > 40 ? 'bg-amber-400' :
+                      'bg-red-400'
+                    }`} style={{width: `${environment.currentCity?.recoveryScore || 50}%`}} />
+                  </div>
+                  <div className="text-xs text-ink/40 mt-0.5">{environment.currentCity?.recoveryScore || 'N/A'}/100</div>
+                </div>
+              </div>
+            </div>
+
+            {/* City search */}
+            <div className="bg-white rounded-2xl p-6 border border-forest/5 mb-6">
+              <div className="text-sm font-medium text-ink mb-2">City Energy Check</div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter a city name (e.g. Shanghai, Dali)"
+                  value={cityInput}
+                  onChange={e => setCityInput(e.target.value)}
+                  className="flex-1 px-4 py-2.5 bg-cream border border-forest/10 rounded-xl text-sm text-ink outline-none focus:border-forest/30 transition-colors"
+                />
+                <button
+                  onClick={handleCitySearch}
+                  className="px-5 py-2.5 bg-forest text-white rounded-xl text-sm font-medium hover:bg-forest/90 transition"
+                >
+                  Check
+                </button>
+              </div>
+              {environment.currentCity && (
+                <div className="mt-4 p-4 bg-cream rounded-xl">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-ink">{environment.currentCity.name}</div>
+                      <div className="text-xs text-ink/40 mt-0.5">{environment.currentCity.description}</div>
+                    </div>
+                    <div className="text-right text-xs">
+                      <div className="text-forest">Recovery: {environment.currentCity.recoveryScore}</div>
+                      <div className="text-red-400">Stress: {environment.currentCity.stress}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Relationship cards */}
+            <div className="grid md:grid-cols-3 gap-3 mb-6">
+              {environment.relationships.slice(0, 3).map((r, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 border border-forest/5">
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm font-medium text-ink">{r.label}</span>
+                    <span className={`text-xs font-medium ${r.impact > 0 ? 'text-forest' : 'text-red-400'}`}>
+                      {r.impact > 0 ? '+' : ''}{r.impact}
+                    </span>
+                  </div>
+                  <p className="text-xs text-ink/40 mt-2 leading-relaxed">{r.description}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* City recommendations */}
+            <div className="bg-white rounded-2xl p-6 border border-forest/5">
+              <div className="text-sm font-medium text-ink mb-3">Recommended Cities</div>
+              <div className="space-y-2">
+                {environment.recommendedCities.slice(0, 3).map((city, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-forest/5 last:border-0">
+                    <div>
+                      <span className="text-sm text-ink">{city.name}</span>
+                      <span className="text-xs text-ink/30 ml-2">{city.description.split('.')[0]}.</span>
+                    </div>
+                    <div className="flex gap-3 text-xs">
+                      <span className="text-forest">{city.recoveryScore} recovery</span>
+                      <span className="text-red-400">{city.stress} stress</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Life Simulation Section */}
         {simulation && (
