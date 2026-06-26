@@ -1,5 +1,13 @@
 // lib/core/session.ts
 
+export interface BirthInfo {
+ year: number;
+ month: number;
+ day: number;
+ hour: number;
+ minute?: number;
+}
+
 export interface SessionData {
  input: string;
  answers: number[];
@@ -7,6 +15,8 @@ export interface SessionData {
  score: number;
  timestamp: number;
  profile?: any;
+ birthInfo?: BirthInfo;
+ birthType?: string;
 }
 
 export function saveSession(data: SessionData): void {
