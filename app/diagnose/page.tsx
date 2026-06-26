@@ -3,225 +3,160 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { saveSession } from '@/lib/core/session';
-import { ROUNDS } from '@/lib/conversation/rounds';
-import { runConversation } from '@/lib/conversation/engine';
-import type { Message } from '@/lib/conversation/types';
-
-const ENTRANCE = [
-  { role: 'guide', text: 'Tell me what has been weighing on you lately.', delay: 600 },
-  { role: 'guide', text: 'I will listen.', delay: 1400 },
-];
-
-const COMPLETION_MSGS: Message[] = [
-  { role: 'guide', text: "That's enough for me to see your pattern.", delay: 500 },
-  { role: 'guide', text: "Give me one moment — I'm mapping your system.", delay: 1500 },
-];
-
-const getEmpathyForRound = (roundIdx: number): string | null => {
-  const round = ROUNDS[roundIdx];
-  if (!round?.empathy) return null;
-  return round.empathy;
-};
-
-const getTransition = (roundIdx: number): string | null => {
-  const transitions: (string | null)[] = [
-    null,
-    null,
-    null,
-    null,
-    "One last question — then I'll show you what I see.",
-  ];
-  return transitions[roundIdx] ?? null;
-};
+import { V5_ROUNDS, ChatMessage } from '@/lib/v5/types';
+import { extractState, calculateSystemLoad } from '@/lib/v5/extractor';
 
 export default function DiagnosePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialInput = searchParams.get('input') || '';
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showInput, setShowInput] = useState(false);
   const [userText, setUserText] = useState('');
-  const [round, setRound] = useState(-1); // -1 = entrance
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
-  const [completed, setCompleted] = useState(false);
-
+  const [round, setRound] = useState(-1); // -1 = entrance, 0-3 = rounds, 4 = complete
+  const [isProcessing, setIsProcessing] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Scroll to bottom on new messages
+  // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, showInput]);
 
-  // Focus input when it appears
+  // Focus input
   useEffect(() => {
-    if (showInput) {
-      inputRef.current?.focus();
+    if (showInput && !isProcessing) {
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [showInput]);
+  }, [showInput, isProcessing]);
 
   // Entrance sequence
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
-    ENTRANCE.forEach((msg) => {
-      const t = setTimeout(() => {
-        setMessages((prev) => [...prev, msg as Message]);
-        if (msg === ENTRANCE[ENTRANCE.length - 1]) {
-          setTimeout(() => setShowInput(true), 400);
-        }
-      }, msg.delay!);
-      timers.push(t);
-    });
-    return () => timers.forEach(clearTimeout);
-  }, []);
-
-  // Show guide question for a round
-  const showGuideMessage = (guideText: string, callback?: () => void) => {
-    setMessages((prev) => [...prev, { role: 'guide', text: guideText }]);
-    setShowInput(false);
-
-    // After guide speaks, show input again
+    const entranceMsgs: ChatMessage[] = [
+      { role: 'guide', text: "Tell me what has been weighing on you lately.", timestamp: Date.now() },
+      { role: 'guide', text: "I will listen.", timestamp: Date.now() + 600 },
+    ];
+    
     setTimeout(() => {
-      setShowInput(true);
-      callback?.();
-    }, 600);
-  };
-
-  // Start first round
-  const startFirstRound = (initialMsg?: string) => {
-    setRound(0);
-    setShowInput(false);
-
-    const firstQuestion = ROUNDS[0].question;
-
-    // If user came with input from homepage, auto-answer round 0
-    if (initialMsg?.trim()) {
-      const userMsg: Message = { role: 'user', text: initialMsg };
-      setMessages((prev) => [...prev, userMsg]);
-      setUserAnswers([initialMsg.trim()]);
-
+      setMessages([entranceMsgs[0]]);
       setTimeout(() => {
-        showRound1(initialMsg.trim());
-      }, 800);
-    } else {
-      showGuideMessage(firstQuestion);
-    }
-  };
+        setMessages(prev => [...prev, entranceMsgs[1]]);
+        setTimeout(() => {
+          setShowInput(true);
+          if (initialInput) {
+            // Auto-submit initial input from homepage
+            handleUserMessage(initialInput);
+          }
+        }, 400);
+      }, 600);
+    }, 400);
+  }, [initialInput]);
 
-  // After round 0 answer
-  const showRound1 = (answer: string) => {
-    const empathy = getEmpathyForRound(0);
-    const nextQ = ROUNDS[1].question;
-
-    if (empathy) {
-      setMessages((prev) => [...prev, { role: 'guide', text: empathy }]);
-      setTimeout(() => {
-        showGuideMessage(nextQ);
-      }, 1200);
-    } else {
-      showGuideMessage(nextQ);
-    }
-  };
-
-  // Handle user submission for current round
-  const handleSubmit = (text: string) => {
-    if (!text.trim()) return;
-
+  const handleUserMessage = (text: string) => {
+    if (!text.trim() || isProcessing) return;
+    
     const trimmed = text.trim();
-    const newAnswers = [...userAnswers, trimmed];
-
-    // Add user message
-    setMessages((prev) => [...prev, { role: 'user', text: trimmed }]);
-    setUserText('');
+    setIsProcessing(true);
     setShowInput(false);
-
+    
+    // Add user message
+    const userMsg: ChatMessage = { role: 'user', text: trimmed, timestamp: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+    setUserText('');
+    
+    // Determine next step
     const nextRound = round + 1;
-
+    
     setTimeout(() => {
-      if (nextRound >= ROUNDS.length) {
-        // All rounds complete → completion
-        setUserAnswers(newAnswers);
-        handleCompletion(newAnswers);
+      if (nextRound >= V5_ROUNDS.length) {
+        // Complete - show final empathy then extract
+        handleCompletion([...messages.filter(m => m.role === 'user').map(m => m.text), trimmed]);
       } else {
-        setUserAnswers(newAnswers);
-        processNextRound(nextRound, trimmed, newAnswers);
+        // Continue to next round
+        continueConversation(nextRound, trimmed);
       }
     }, 600);
   };
 
-  const processNextRound = (nextRound: number, currentAnswer: string, allAnswers: string[]) => {
-    const empathy = getEmpathyForRound(nextRound - 1); // empathy for PREVIOUS answer
-    const transition = getTransition(nextRound);
-    const nextQ = ROUNDS[nextRound]?.question;
-
-    let delay = 400;
-
-    if (empathy) {
-      const empathyMsg: Message = { role: 'guide', text: empathy };
-      setMessages((prev) => [...prev, empathyMsg]);
-      delay = 1200;
-    }
-
+  const continueConversation = (roundIdx: number, lastAnswer: string) => {
+    const roundConfig = V5_ROUNDS[roundIdx];
+    
+    // Show empathy for previous answer
+    const empathyMsg: ChatMessage = { 
+      role: 'guide', 
+      text: roundConfig.empathyResponse,
+      timestamp: Date.now() 
+    };
+    setMessages(prev => [...prev, empathyMsg]);
+    
     setTimeout(() => {
-      if (transition) {
-        setMessages((prev) => [...prev, { role: 'guide', text: transition }]);
-        setTimeout(() => {
-          showGuideMessage(nextQ);
-        }, 1000);
-      } else {
-        showGuideMessage(nextQ);
-      }
-      setRound(nextRound);
-    }, delay);
+      // Show next question
+      const questionMsg: ChatMessage = { 
+        role: 'guide', 
+        text: roundConfig.question,
+        timestamp: Date.now() 
+      };
+      setMessages(prev => [...prev, questionMsg]);
+      setRound(roundIdx);
+      setShowInput(true);
+      setIsProcessing(false);
+    }, 1000);
   };
 
-  const handleCompletion = (answers: string[]) => {
-    setCompleted(true);
-
-    // Run conversation engine silently
-    const result = runConversation(answers, ROUNDS);
-
-    // Save to session
-    saveSession({
-      input: initialInput,
-      answers: [],  // engine output replaces fixed scores
-      texts: answers,
-      conversationResult: result,
-      score: Math.round(
-        (result.cognitive.physicalLoad +
-          result.cognitive.emotionalCompression +
-          result.cognitive.cognitiveNoise +
-          result.cognitive.recoveryLatency +
-          result.cognitive.behavioralDrift) / 5
-      ),
-      timestamp: Date.now(),
-    });
-
-    // Show completion messages
+  const handleCompletion = (allAnswers: string[]) => {
+    // Final empathy
+    const finalEmpathy: ChatMessage = { 
+      role: 'guide', 
+      text: "That's enough. I can see your pattern now.",
+      timestamp: Date.now() 
+    };
+    setMessages(prev => [...prev, finalEmpathy]);
+    
     setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'guide', text: 'That\'s enough. I can see your pattern now.', delay: 400 }]);
-
+      // Extract state from all answers
+      const cognitiveState = extractState(allAnswers);
+      const systemLoad = calculateSystemLoad(cognitiveState);
+      
+      // Save to session
+      saveSession({
+        input: initialInput || allAnswers[0],
+        answers: [
+          cognitiveState.physicalLoad,
+          50, // placeholder for compatibility
+          cognitiveState.emotionalCompression,
+          cognitiveState.recoveryLatency,
+          cognitiveState.cognitiveNoise,
+        ],
+        texts: allAnswers,
+        v5State: cognitiveState,
+        score: systemLoad,
+        timestamp: Date.now(),
+      });
+      
+      // Transition message
+      const transitionMsg: ChatMessage = { 
+        role: 'guide', 
+        text: "One moment — I'm mapping your system.",
+        timestamp: Date.now() 
+      };
+      setMessages(prev => [...prev, transitionMsg]);
+      
       setTimeout(() => {
-        setMessages((prev) => [...prev, { role: 'guide', text: 'One moment — I\'m mapping your system.', delay: 400 }]);
-
-        setTimeout(() => {
-          router.push('/result');
-        }, 1600);
-      }, 1000);
-    }, 500);
+        router.push('/result');
+      }, 1200);
+    }, 800);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(userText);
+      handleUserMessage(userText);
     }
   };
 
-  // ============================================================
-  // ENTRANCE SCREEN (before first guide message)
-  // ============================================================
+  // Loading state before entrance
   if (round === -1 && messages.length === 0) {
     return (
       <main className="min-h-screen bg-[#0B0B0B] flex items-center justify-center">
@@ -233,19 +168,16 @@ export default function DiagnosePage() {
     );
   }
 
-  // ============================================================
-  // CHAT INTERFACE
-  // ============================================================
   return (
     <main className="min-h-screen bg-[#0B0B0B] flex flex-col">
       <div className="flex-1 max-w-lg mx-auto w-full px-5 pt-4 pb-4 flex flex-col">
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-3 py-4 scrollbar-thin" style={{ scrollBehavior: 'smooth' }}>
+        <div className="flex-1 overflow-y-auto space-y-4 py-4 scrollbar-thin" style={{ scrollBehavior: 'smooth' }}>
           {messages.map((msg, i) => (
             <div
               key={i}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-up`}
-              style={{ animationDelay: `${i * 80}ms` }}
+              style={{ animationDelay: `${i * 60}ms` }}
             >
               <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                 msg.role === 'user'
@@ -260,7 +192,7 @@ export default function DiagnosePage() {
           ))}
 
           {/* Typing indicator */}
-          {!showInput && !completed && (
+          {isProcessing && (
             <div className="flex justify-start animate-fade-up">
               <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl px-4 py-3">
                 <div className="flex gap-1.5">
@@ -276,7 +208,7 @@ export default function DiagnosePage() {
         </div>
 
         {/* Input */}
-        {showInput && (
+        {showInput && !isProcessing && (
           <div className="border-t border-white/[0.06] pt-3 pb-2 animate-fade-up">
             <div className="flex gap-2 items-end">
               <textarea
@@ -285,11 +217,11 @@ export default function DiagnosePage() {
                 onChange={(e) => setUserText(e.target.value)}
                 onKeyDown={onKeyDown}
                 rows={1}
-                placeholder={round === 0 && !initialInput ? 'I\'ve been feeling...' : 'Type freely...'}
+                placeholder={round === -1 ? "I've been feeling..." : "Type freely..."}
                 className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white/80 text-sm outline-none resize-none placeholder:text-white/15 transition-all focus:border-[#C4A862]/30 max-h-32"
               />
               <button
-                onClick={() => handleSubmit(userText)}
+                onClick={() => handleUserMessage(userText)}
                 disabled={!userText.trim()}
                 className={`px-5 py-3 rounded-xl text-sm transition-all ${
                   userText.trim()
@@ -301,9 +233,9 @@ export default function DiagnosePage() {
               </button>
             </div>
             <p className="text-white/10 text-[10px] mt-1.5 text-center font-light">
-              {round === 0 && !initialInput
+              {round === -1 
                 ? 'There are no wrong answers — just what is true for you right now'
-                : 'Press Enter to send'}
+                : `Round ${round + 1} of ${V5_ROUNDS.length}`}
             </p>
           </div>
         )}

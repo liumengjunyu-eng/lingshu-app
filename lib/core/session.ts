@@ -18,6 +18,13 @@ export interface SessionData {
   birthInfo?: BirthInfo;
   birthType?: string;
   conversationResult?: any;
+  v5State?: {
+    physicalLoad: number;
+    emotionalCompression: number;
+    cognitiveNoise: number;
+    recoveryLatency: number;
+    behavioralDrift: number;
+  };
 }
 
 export function saveSession(data: SessionData): void {
