@@ -167,10 +167,35 @@ export function runSymbolEngineV2(input: SymptomInput): V2Output {
   };
 
   // ──────────────────────────────────────────
+  // V4 CONTRACT VALIDATION
+  // ──────────────────────────────────────────
+
+  function validateContract(output: any) {
+    const required = [
+      'user_profile',
+      'signals',
+      'interpretation',
+      'decision',
+      'recovery_pathway',
+    ];
+    for (const key of required) {
+      if (!output[key]) {
+        throw new Error(`V4 CONTRACT VIOLATION: missing ${key}`);
+      }
+    }
+    if (!output.decision?.actions) {
+      throw new Error('V4 CONTRACT VIOLATION: decision.actions missing');
+    }
+    if (!output.recovery_pathway?.phase_1) {
+      throw new Error('V4 CONTRACT VIOLATION: recovery_pathway.phase_1 missing');
+    }
+  }
+
+  // ──────────────────────────────────────────
   // OUTPUT
   // ──────────────────────────────────────────
 
-  return {
+  const output = {
     user_profile: { archetype, intensity_score },
     signals,
     interpretation: { label, insight, evidence },
@@ -182,4 +207,8 @@ export function runSymbolEngineV2(input: SymptomInput): V2Output {
     five_elements,
     forecast,
   };
+
+  validateContract(output);
+
+  return output;
 }
