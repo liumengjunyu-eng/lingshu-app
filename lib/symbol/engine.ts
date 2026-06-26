@@ -356,7 +356,15 @@ import { buildIdentity } from './v5/identity';
 import { computeGrowthLoop } from './v5/growthLoop';
 
 // ============================================================
-// 8. 主入口
+// 8. V6 自动增长系统注入
+// ============================================================
+
+import { generateContentStream } from './v6/contentEngine';
+import { computeDistribution } from './v6/distribution';
+import { computeFeedbackLoop } from './v6/feedbackLoop';
+
+// ============================================================
+// 9. 主入口
 // ============================================================
 
 export function runSymbolEngine(input: HumanInput): SymbolOutput {
@@ -392,10 +400,18 @@ export function runSymbolEngine(input: HumanInput): SymbolOutput {
  const identity = buildIdentity(baseOutput);
  const growth = computeGrowthLoop(baseOutput);
 
+ // V6 自动增长系统注入
+ const content_stream = generateContentStream(baseOutput);
+ const distribution = computeDistribution(baseOutput);
+ const feedback_loop = computeFeedbackLoop();
+
  return {
    ...baseOutput,
    share,
    identity,
    growth,
+   content_stream,
+   distribution,
+   feedback_loop,
  };
 }

@@ -102,4 +102,29 @@ export interface V2Output {
       instagram: string;
     };
   };
+
+  // V6: Autonomous Growth System
+  content_stream?: {
+    threads: Array<{
+      platform: string;
+      content: string;
+    }>;
+    hook_variants: string[];
+  };
+
+  distribution?: {
+    tiktok: { format: string; viral_score: number; style: string };
+    x: { format: string; viral_score: number; style: string };
+    instagram: { format: string; viral_score: number; style: string };
+    youtube: { format: string; viral_score: number; style: string };
+  };
+
+  feedback_loop?: {
+    signals: string[];
+    adaptive_rules: Array<{
+      condition: string;
+      action: string;
+    }>;
+    learning_target: string;
+  };
 }

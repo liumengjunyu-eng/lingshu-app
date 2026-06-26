@@ -1,0 +1,6 @@
+v6: autonomous growth system — content + distribution + feedback
+
+- Add lib/symbol/v6/ (contentEngine, distribution, feedbackLoop)
+- Inject V6 into engine.ts return
+- Update types.ts with V6 fields
+- Add Generated Identity Content UI to result page

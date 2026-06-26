@@ -470,6 +470,54 @@ export default function Result() {
                     </div>
                   )}
 
+                  {/* V6: Generated Identity Content — 自动内容生产 */}
+                  {d.content_stream && d.distribution && d.feedback_loop && (
+                    <div className="mt-6 p-6 border border-[#C4A862]/20 rounded-xl bg-[#C4A862]/5">
+                      <p className="text-xs text-white/30 uppercase">Generated Identity Content</p>
+
+                      <p className="text-lg text-[#C4A862] mt-2">
+                        {d.share?.title}
+                      </p>
+
+                      <div className="mt-4 space-y-2">
+                        {d.content_stream.threads.map((t: any, i: number) => (
+                          <div key={i} className="text-sm text-white/70 border-b border-white/10 pb-2">
+                            <p className="text-xs text-white/30">{t.platform.toUpperCase()}</p>
+                            <p>{t.content}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className="text-xs text-white/40">
+                          TikTok viral: {Math.round(d.distribution.tiktok.viral_score * 100)}%
+                        </span>
+                        <span className="text-xs text-white/20">|</span>
+                        <span className="text-xs text-white/40">
+                          X viral: {Math.round(d.distribution.x.viral_score * 100)}%
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-white/30 mt-3">
+                        Learning: {d.feedback_loop.learning_target}
+                      </p>
+
+                      <button
+                        onClick={() => {
+                          const text = d.content_stream.threads
+                            .map((t: any) => `[${t.platform.toUpperCase()}]\n${t.content}`)
+                            .join('\n\n');
+                          navigator.clipboard.writeText(text);
+                          setCopied('v6-export');
+                          setTimeout(() => setCopied(''), 2000);
+                        }}
+                        className="mt-4 px-6 py-2 bg-[#C4A862] text-black rounded-full text-sm font-medium hover:opacity-90 transition"
+                      >
+                        {copied === 'v6-export' ? '✓ Copied!' : 'Export & Share Across Platforms'}
+                      </button>
+                    </div>
+                  )}
+
                   {/* V3.3: Network & Factory Panel */}
                   <div className="mt-6">
                     <button
